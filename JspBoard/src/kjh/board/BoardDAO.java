@@ -415,6 +415,57 @@ public class BoardDAO {
 	
 	
 	
-	//글 삭제 시켜주는 메서드 => 회원탈퇴 메서드와 동일(삭제 전 암호를 물어본다!)
-	//public int deleteArticle(int num, String passwd){}
+//글 삭제 시켜주는 메서드 => 회원탈퇴 메서드와 동일(삭제 전 암호를 물어본다!)
+	public int deleteArticle(int num, String passwd){
+		
+		String dbpasswd = null; //DB에서 찾은 암호를 저장할 변수 (암호가 맞으면 삭제, 틀리면 삭제X)
+		int x = -1; //게시물의 삭제 성공 유무
+		
+		
+	//게시물 번호 + 1 -> 다음번에 게시글을 쓰면 번호가 +1이 되는 것.
+			try {
+				con = pool.getConnection(); //항상 DB를 먼저 연결한다.
+				//SQL문장
+				sql = "select passwd from board where num=?"; //게시글(num)에 해당하는 passwd를 가지고 옴
+				pstmt = con.prepareStatement(sql); //pstmt를 얻어와야 sql문장을 실행할 수 있다. -> 이걸 작성하지 않으면 NullPointerException 오류가 난다.
+				//?가 있으므로 
+				pstmt.setInt(1, num);
+				//select이기 때문에 result값을 얻어온다., executeQuery()
+				//insert, update, delete라면 executeUpdate
+				rs = pstmt.executeQuery();
+				
+				if(rs.next()) { //현재 테이블에서 입력한 암호를 찾았다면
+					dbpasswd = rs.getString("passwd");
+					//암호 확인
+					System.out.println("dbpasswd=>" + dbpasswd);
+				
+				
+				//db상의 암호와 웹상에 입력한 암호가 같다면
+				if(dbpasswd.contentEquals(passwd)) {
+					
+				//삭제하는 sql문장
+				sql = "delete from board where num=?";
+				//삭제를 한다. 삭제한다고 한 게시글 번호만.
+				//sql구문 개수 = pstmt개수
+				pstmt = con.prepareStatement(sql);
+				
+				//?가 있으므로 set 필요.
+				pstmt.setInt(1, num); //게시글 번호
+
+				int delete = pstmt.executeUpdate(); //sql문이 insert이기 때문에 executeUpdate()!
+				System.out.println("게시판의 글 삭제 성공유무(delete)=>" + delete);
+				
+				x=1; //삭제 성공    --> 반환값 저장!!   (boolean으로 했다면 check = true;)
+				
+				}else { //암호가 틀렸다면
+					x=0; //삭제 실패      (boolean으로 했다면 check=false;)
+				}
+			}//--if(rs.next())의 괄호
+		}catch(Exception e) {
+			System.out.println("deleteArticle()메서드 에러 유발=>" + e);
+		}finally {
+			pool.freeConnection(con, pstmt, rs); //메모리 해제
+		}
+		return x;//x의 값을 반환
+	}
 }
