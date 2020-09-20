@@ -110,4 +110,76 @@ public class BoardDAO {
 			}
 			return articleList; //list.jsp에서 articleList를 for문을 만들 것임.
 	}
+	
+	
+	
+	//글쓰기
+	//insert into board values()
+	public void insertArticle(BoardDTO article) {
+		//받아야하는 매개변수가 많기 때문에 BoardDTO를 article이라는 이름으로 받아온다.
+		//writePro.jsp에서 호출하는데 신규글인지 답변글인지 어떻게 확인을 할까? => article을 가지고 확인한다.
+		int num = article.getNum();//게시글번호 ---> 신규글이냐 답변글이냐 구분을 위해
+		int ref = article.getRef();
+		int re_step = article.getRe_step();
+		int re_level = article.getRe_level();
+		//테이블에 입력할 게시물 번호를 저장할 변수
+		int number = 0; //--> 데이터를 넣기 위해 필요
+		System.out.println("insertArticle메서드의 내부의 num=>" + num);
+		System.out.println("ref=>"+ ref + ", re_step=>" + re_step + ", re_level=>" + re_level);
+		
+	///게시물 번호 + 1 -> 다음번에 게시글을 쓰면 번호가 +1이 되는 것.
+		try {
+			con = pool.getConnection(); //항상 DB를 먼저 연결한다.
+			//SQL문장
+			sql = "select max(num) from board"; //board에서 가장 큰 num을 구해와라 
+			pstmt = con.prepareStatement(sql); //pstmt를 얻어와야 sql문장을 실행할 수 있다.
+			//select이기 때문에 result값을 얻어온다., executeQuery()
+			//insert였다면 executeUpdate
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) { //현재 테이블에서 데이터가 한개라도 존재하면
+				number = rs.getInt(1) + 1; //1-->최대값.  +1 --> 기존의 값에 값을 더하기 위해 +를 씀
+			}else {
+				number = 1; //게시글이 하나도 없는 상태라면 지금 들어가는 값이 1이 되어야 한다. 
+			}
+			
+			
+			//만약에 답변글이라면
+			if(num != 0) {
+				
+			}else { //신규글이라면
+				ref=number; //ref=1,2,3,.... (그룹번호지만 게시글 역할을 한다.)
+				re_step=0;
+				re_level=0;
+			}
+			//12개 데이터를 넣으면 된다. 다만 그 중에서 num, reg_date, readcount는 입력 받지 않는다.
+			//mysql은 날짜를 작성할 때 (now())를 쓴다. / SQL은 sysdate
+			sql = "insert into board(writer,email,subject,passwd,reg_date,ref, re_step, re_level, content,ip)values(?,?,?,?,?,?,?,?,?,?)";
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, article.getWriter()); //작성자
+			pstmt.setString(2, article.getEmail());
+			pstmt.setString(3, article.getSubject());
+			pstmt.setString(4, article.getPasswd());
+			pstmt.setTimestamp(5, article.getRegdate());
+			//article은 저장한 값 그대로 출력할 때 사용.
+			//이렇게 하지 않을거면 values(?,?...)쓴 부분에서 5번째에(?,?,?,?,now(),?,?....)로 쓸 수 있다.
+			 
+			//------★★ref, re_step, re_level★★
+			pstmt.setInt(6, ref); //article.getRef()가 아닌 ref라는 것 주의!  => 중간에 신규, 답변글에 대한 값이 변경되기 때문
+			pstmt.setInt(7, re_step);
+			pstmt.setInt(8, re_level);
+			//------------------------------------------
+			
+			pstmt.setString(9,article.getContent()); //글 내용 그대로 불러온다.
+			pstmt.setString(10,article.getIp()); //request.getRemoteAddr(); --> 클라이언트의 ip를 얻어오는 방법
+			
+			int insert = pstmt.executeUpdate(); //sql문이 insert이기 때문에 executeUpdate()!
+			System.out.println("게시판의 글쓰기 성공유무(insert)=>" + insert);
+			
+		}catch(Exception e) {
+			System.out.println("insertArticle()메서드 에러 유발=>" + e);
+		}finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+	}
 }

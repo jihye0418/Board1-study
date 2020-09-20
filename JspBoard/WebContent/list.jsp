@@ -96,7 +96,7 @@ if(count == 0){%>
 		 <%} %>        
 		 
 		 <!-- 게시판(num)에서는 항상 게시물번호, pageNum(페이지번호)는 따라다닌다. -->
-		  <a href="content.jsp?num=<%=article.getNum()%>&pageNum=<%=currentPage%>">글제목</a> 
+		  <a href="content.jsp?num=<%=article.getNum()%>&pageNum=<%=currentPage%>"><%=article.getSubject()%></a> 
 		  
 		  <!-- 조회수가 어느 정도 나오면 뒤에 이미지를 넣어줘라 -->
 		  <%if(article.getReadcount() >= 20){ //조회수가 20 이상인 경우 %>
