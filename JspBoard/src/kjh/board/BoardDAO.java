@@ -66,7 +66,7 @@ public class BoardDAO {
 				                                      // -> 커넥션 풀 (필요할 때마다 객체(connection)를 빌려주고, 필요 없으면 반납한다.)
 				                                     //미리 만들어서 빌려준다. (약간 워터파크의 구명조끼 같은 느낌...?)
 				System.out.println("con=>" + con);
-				sql = "select * from board order by ref desc, re_step asc, limit ?,?"; //ref -> 그룹번호, desc->내림차순 / limit ?,? -> ?부터 ?까지 해당하는 것만 보여달라~
+				sql = "select * from board order by ref desc, re_step asc limit ?,?"; //ref -> 그룹번호, desc->내림차순 / limit ?,? -> ?부터 ?까지 해당하는 것만 보여달라~
 				pstmt = con.prepareStatement(sql);//sql문장실행
 				pstmt.setInt(1, start-1); //sql문장에 ?가 있으니 값을 넣어주자  / MySQL은 레코드순번이 내부적으로 0부터 시작하기 때문에 -1을 빼준다.
 				pstmt.setInt(2, end);
