@@ -2,8 +2,8 @@
     pageEncoding="UTF-8"%>
 <%@ page import ="kjh.board.*, java.util.*, java.text.SimpleDateFormat" %>
 <%!
-	int pageSize = 3; //numPerPage (PageSize) - 페이지당 보여주는 게시물 수
-	int blockSize = 3; //pagePerBlock  - 블럭당 보여주는 페이지 수
+	int pageSize = 10; //numPerPage (PageSize) - 페이지당 보여주는 게시물 수
+	int blockSize = 10; //pagePerBlock  - 블럭당 보여주는 페이지 수
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm"); //게시물 작성 날짜 포멧 변경 (연,월,일 시,분)
 %>
 <%
@@ -161,7 +161,6 @@ if(count == 0){%>
 	}
 }
 %>
-
 </center>
 </body>
 </html>

@@ -3,8 +3,8 @@
     int nowPage = 0;
     int nowBlock = 0;
     int totalRecord = Integer.parseInt(request.getParameter("totalRecord"));
-    int numPerPage = 5;           
-    int pagePerBlock = 15;    
+    int numPerPage = 3;           
+    int pagePerBlock = 3;    
     
 	int totalPage =(int)Math.ceil((double)totalRecord / numPerPage);
 	int totalBlock =(int)Math.ceil((double)totalPage / pagePerBlock);

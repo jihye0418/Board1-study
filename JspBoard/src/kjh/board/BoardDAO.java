@@ -115,7 +115,7 @@ public class BoardDAO {
 	
 	//글쓰기
 	//insert into board values()
-	public void insertArticle(BoardDTO article) {
+	public void insertArticle(BoardDTO article) { //신규글인지 답변글인지 정해주는 기능을 가짐.
 		//받아야하는 매개변수가 많기 때문에 BoardDTO를 article이라는 이름으로 받아온다.
 		//writePro.jsp에서 호출하는데 신규글인지 답변글인지 어떻게 확인을 할까? => article을 가지고 확인한다.
 		int num = article.getNum();//게시글번호 ---> 신규글이냐 답변글이냐 구분을 위해
@@ -138,7 +138,7 @@ public class BoardDAO {
 			rs = pstmt.executeQuery();
 			
 			if(rs.next()) { //현재 테이블에서 데이터가 한개라도 존재하면
-				number = rs.getInt(1) + 1; //1-->최대값.  +1 --> 기존의 값에 값을 더하기 위해 +를 씀
+				number = rs.getInt(1)+1; //1-->최대값.  +1 --> 기존의 값에 값을 더하기 위해 +를 씀
 			}else {
 				number = 1; //게시글이 하나도 없는 상태라면 지금 들어가는 값이 1이 되어야 한다. 
 			}
@@ -146,9 +146,20 @@ public class BoardDAO {
 			
 			//만약에 답변글이라면
 			if(num != 0) {
-				
+				//★중요★
+				//값이 들어갈 자리를 만든다. set re_step + 1
+				sql = "update board set re_step=re_step+1 where ref=? and re_step > ?"; //기존에 있던 데이터들을 다 뒤로 밀리게 해야 한다.
+						//같은 그룹 번호이면서 나보다 step값이 큰 게시물을 찾아서 그 step값을 1 증가시켜라
+				pstmt = con.prepareStatement(sql); //sql문을 실행할 것이다~
+				pstmt.setInt(1, ref);
+				pstmt.setInt(2, re_step); //값을 순서대로 넣는다.
+				int update = pstmt.executeUpdate();//sql문을 실행해본다.
+				System.out.println("댓글수정유무(update)=>" + update);
+
+				re_step = re_step+1; //답글을 달 때마다 기존값이 하나씩 증가한다.
+				re_level = re_level+1;
 			}else { //신규글이라면
-				ref=number; //ref=1,2,3,.... (그룹번호지만 게시글 역할을 한다.)
+				ref=number; //ref=1,2,3,.... (그룹번호지만 게시글 역할을 한다.)-> ref도 게시물 구분자로 사용 가능
 				re_step=0;
 				re_level=0;
 			}
@@ -156,6 +167,8 @@ public class BoardDAO {
 			//mysql은 날짜를 작성할 때 (now())를 쓴다. / SQL은 sysdate
 			sql = "insert into board(writer,email,subject,passwd,reg_date,ref, re_step, re_level, content,ip)values(?,?,?,?,?,?,?,?,?,?)";
 			pstmt = con.prepareStatement(sql);
+			//article은 웹상의 데이터를 그대로 넣는것.
+			//article이 없는 것은 그때 그때 계산해서 넣기 때문에 값이 바뀐다.
 			pstmt.setString(1, article.getWriter()); //작성자
 			pstmt.setString(2, article.getEmail());
 			pstmt.setString(3, article.getSubject());
@@ -182,4 +195,101 @@ public class BoardDAO {
 			pool.freeConnection(con, pstmt, rs);
 		}
 	}
+	
+	//글 상세보기 구현을 하는 것은~
+	//1. 게시물에 해당되는 조회수를 증가시킬 수 있다.
+	//2. 증가된 조회수를 가진 레코드를 검색해서 화면에 출력할 수 있다.
+	
+	//메서드를 만들어보자 -> sql문장 먼저 써보기!
+	//select * from board where num='찾고자하는 게시글번호';
+	//(회원수정) select * from member where id = '찾고자하는 멤버 id';
+	//웹상에 호출하면 다 public
+	public BoardDTO getArticle(int num){ 
+		BoardDTO article = null;//반환값이 있다.(게시물번호에 해당하는 레코드 한개를 담을 변수 필요)
+		try {
+			con = pool.getConnection(); //connection객체를 먼저 얻어온다.
+			//sql문장
+			sql = "update board set readcount = readcount + 1 where num=?"; 	//글을 누르면 그 글의 조회수를 증가시켜라
+
+			pstmt = con.prepareStatement(sql); //SQL문장 실행을 위해 필요.
+			pstmt.setInt(1,num);//?에 값을 넣어준다.
+			
+			//수정을 하는 것이기 때문에 반환값을 준다.
+			int update = pstmt.executeUpdate();
+			System.out.println("조회수 증가 유무(update) =>" + update);
+			
+			//2번째 sql문장
+			sql = "select * from board where num=?"; //게시물에 해당되는 레코드 전체를 얻어와라
+			pstmt = con.prepareStatement(sql); //sql문장을 실행하기 위해 필요
+			//?가 있으므로 값을 넣어준다.
+			pstmt.setInt(1, num);
+			rs = pstmt.executeQuery();//select를 사용했으므로 필요하다, select이기 때문에 executeQuery
+			
+			//if는 레코드가 한 개 있을 때 사용
+			if(rs.next()) {
+				//---------------article에 레코드를 담는다.---------------
+				article = new BoardDTO(); //객체 만듦
+				
+				article.setNum(rs.getInt("num"));//게시물 번호를 불러온다. 
+				article.setWriter(rs.getString("writer"));
+				article.setEmail(rs.getString("email"));
+				article.setSubject(rs.getString("subject"));
+				article.setPasswd(rs.getString("passwd"));
+				article.setContent(rs.getString("content"));
+				article.setIp(rs.getString("ip"));
+				
+				article.setRegdate(rs.getTimestamp("reg_date"));//작성날짜 (오늘날짜)
+				article.setReadcount(rs.getInt("readcount")); //조회수
+				
+				//-----------------댓글----------------
+				article.setRef(rs.getInt("ref")); //그룹번호
+				article.setRe_step(rs.getInt("re_step")); //답변글 순서
+				article.setRe_level(rs.getInt("re_level")); //답변의 깊이 
+				//-------------------------------------
+				
+				article.setContent(rs.getString("content"));
+				article.setIp(rs.getNString("ip"));
+			}
+		}catch(Exception e) {
+			System.out.println("getArticle()호출 에러=>" + e);
+		}finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+		return article;//반환값
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
