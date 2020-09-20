@@ -77,6 +77,7 @@ public class BoardDAO {
 					//articleList = new List(); 인터페이스는 자기 자신은 객체를 생성할 수 없다. 
 					articleList = new ArrayList(end); //화면에 보여질 게시글은 end개수 만큼.(end개수만큼 데이터를 담을 공간 생성)
 					do { //찾은 레코드의 필드별로 저장
+						/*
 						BoardDTO article = new BoardDTO();
 						article.setNum(rs.getInt("num"));//게시물 번호를 불러온다. 
 						article.setWriter(rs.getString("writer"));
@@ -97,6 +98,8 @@ public class BoardDAO {
 						
 						article.setContent(rs.getString("content"));
 						article.setIp(rs.getNString("ip"));
+						*/
+						BoardDTO article = makeArticleFromResult();
 						
 						//추가하기
 						articleList.add(article); //위의 레코드들을 articleList에 추가해줌. 
@@ -127,7 +130,7 @@ public class BoardDAO {
 		System.out.println("insertArticle메서드의 내부의 num=>" + num);
 		System.out.println("ref=>"+ ref + ", re_step=>" + re_step + ", re_level=>" + re_level);
 		
-	///게시물 번호 + 1 -> 다음번에 게시글을 쓰면 번호가 +1이 되는 것.
+	//게시물 번호 + 1 -> 다음번에 게시글을 쓰면 번호가 +1이 되는 것.
 		try {
 			con = pool.getConnection(); //항상 DB를 먼저 연결한다.
 			//SQL문장
@@ -228,6 +231,8 @@ public class BoardDAO {
 			//if는 레코드가 한 개 있을 때 사용
 			if(rs.next()) {
 				//---------------article에 레코드를 담는다.---------------
+				article = makeArticleFromResult();
+				/*
 				article = new BoardDTO(); //객체 만듦
 				
 				article.setNum(rs.getInt("num"));//게시물 번호를 불러온다. 
@@ -249,6 +254,7 @@ public class BoardDAO {
 				
 				article.setContent(rs.getString("content"));
 				article.setIp(rs.getNString("ip"));
+				*/
 			}
 		}catch(Exception e) {
 			System.out.println("getArticle()호출 에러=>" + e);
@@ -259,37 +265,156 @@ public class BoardDAO {
 	}
 	
 	
+	//------------------글 수정-------------------
+	//1. 글 수정하기 위한 데이터를 웹에 출력할 목적의 메서드
+	public BoardDTO updateGetArticle(int num) {
+		BoardDTO article = null;//반환값이 있다.(게시물번호에 해당하는 레코드 한개를 담을 변수 필요)
+		try {
+			con = pool.getConnection(); //connection객체를 먼저 얻어온다.
+			
+			sql = "select * from board where num=?"; //게시물에 해당되는 레코드 전체를 얻어와라
+			pstmt = con.prepareStatement(sql); //sql문장을 실행하기 위해 필요
+			//?가 있으므로 값을 넣어준다.
+			pstmt.setInt(1, num);
+			rs = pstmt.executeQuery();//select를 사용했으므로 필요하다, select이기 때문에 executeQuery
+			
+			//if는 레코드가 한 개 있을 때 사용
+			if(rs.next()) {
+				article = makeArticleFromResult();//일반클래스->일반클래스 호출할 때는 메서드명();
+				//---------------article에 레코드를 담는다.---------------
+				/*
+				article = new BoardDTO(); //객체 만듦
+				
+				article.setNum(rs.getInt("num"));//게시물 번호를 불러온다. 
+				article.setWriter(rs.getString("writer"));
+				article.setEmail(rs.getString("email"));
+				article.setSubject(rs.getString("subject"));
+				article.setPasswd(rs.getString("passwd"));
+				article.setContent(rs.getString("content"));
+				article.setIp(rs.getString("ip"));
+				
+				article.setRegdate(rs.getTimestamp("reg_date"));//작성날짜 (오늘날짜)
+				article.setReadcount(rs.getInt("readcount")); //조회수
+				
+				//-----------------댓글----------------
+				article.setRef(rs.getInt("ref")); //그룹번호
+				article.setRe_step(rs.getInt("re_step")); //답변글 순서
+				article.setRe_level(rs.getInt("re_level")); //답변의 깊이 
+				//-------------------------------------
+				
+				article.setContent(rs.getString("content"));
+				article.setIp(rs.getNString("ip"));
+				*/
+			}
+		}catch(Exception e) {
+			System.out.println("getArticle()호출 에러=>" + e);
+		}finally {
+			pool.freeConnection(con, pstmt, rs);
+		}
+		return article;//반환값
+	}
+	
+	//중복된 레코드 한개를 담을 수 있는 메서드를 따로 작성해보자.
+	//내부에서만 불러서 사용해야 하기 때문에 private!!
+	//private이기 때문에 대신 담아서 리턴할 수 있는 것이 필요하다.
+	private BoardDTO makeArticleFromResult() throws Exception{ //예외처리 필요
+		BoardDTO article = new BoardDTO(); //객체 만듦
+		
+		article.setNum(rs.getInt("num"));//게시물 번호를 불러온다. 
+		article.setWriter(rs.getString("writer"));
+		article.setEmail(rs.getString("email"));
+		article.setSubject(rs.getString("subject"));
+		article.setPasswd(rs.getString("passwd"));
+		article.setContent(rs.getString("content"));
+		article.setIp(rs.getString("ip"));
+		
+		article.setRegdate(rs.getTimestamp("reg_date"));//작성날짜 (오늘날짜)
+		article.setReadcount(rs.getInt("readcount")); //조회수
+		
+		//-----------------댓글----------------
+		article.setRef(rs.getInt("ref")); //그룹번호
+		article.setRe_step(rs.getInt("re_step")); //답변글 순서
+		article.setRe_level(rs.getInt("re_level")); //답변의 깊이 
+		//-------------------------------------
+		
+		article.setContent(rs.getString("content"));
+		article.setIp(rs.getNString("ip"));
+		
+		return article;
+	}
 	
 	
 	
 	
+	//2. 글 수정해주는 메서드 필요(insertArticle메서드와 거의 비슷)
+	public int updateArticle(BoardDTO article){//★수정 성공했다vs못했다★ -> boolean이지만 int로 해봄 
+		//수정하는 데이터, 수정하지 않는 데이터 모두 가지고 옴
+		//전체를 받아옴, 반환값 있음
+		
+		String dbpasswd = null; //DB에서 찾은 암호를 저장할 변수 (암호가 맞으면 수정, 틀리면 수정X)
+		int x = -1; //게시물의 수정성공 유무
+		
+		
+	//게시물 번호 + 1 -> 다음번에 게시글을 쓰면 번호가 +1이 되는 것.
+			try {
+				con = pool.getConnection(); //항상 DB를 먼저 연결한다.
+				//SQL문장
+				sql = "select passwd from board where num=?"; //게시글에 해당하는 passwd를 가지고 옴
+				pstmt = con.prepareStatement(sql); //pstmt를 얻어와야 sql문장을 실행할 수 있다.
+				//?가 있으므로 
+				pstmt.setInt(1, article.getNum()); //article에서 꺼내서 게시글 번호를 가지고 옴.
+				//select이기 때문에 result값을 얻어온다., executeQuery()
+				//insert였다면 executeUpdate
+				rs = pstmt.executeQuery();
+				
+				if(rs.next()) { //현재 테이블에서 입력한 암호를 찾았다면
+					dbpasswd = rs.getString("passwd");
+					//암호 확인
+					System.out.println("dbpasswd=>" + dbpasswd);
+				
+				
+				//db상의 암호와 웹상에 입력한 암호가 같다면
+				if(dbpasswd.contentEquals(article.getPasswd())) {
+					
+				//수정하는 sql문장
+				sql = "update board set writer=?,email=?,subject=?,passwd=?,";
+				sql+="content=? where num=?";
+				//수정할 수 있는 것들을 골라 ?를 붙인다. 그리고 다 바뀌는 것이 아니라 게시글 번호에 해당되는 것만 바꿔야하므로 where!
+				
+				pstmt = con.prepareStatement(sql);
+				//article은 웹상의 데이터를 그대로 넣는것.
+				//article이 없는 것은 그때 그때 계산해서 넣기 때문에 값이 바뀐다.
+				pstmt.setString(1, article.getWriter()); //작성자
+				pstmt.setString(2, article.getEmail());
+				pstmt.setString(3, article.getSubject());
+				pstmt.setString(4, article.getPasswd());
+				pstmt.setString(5,article.getContent()); //글 내용 그대로 불러온다.
+				pstmt.setInt(6, article.getNum());
+
+				//pstmt.setTimestamp(5, article.getRegdate()); -> 수정하지 않음.
+				//article은 저장한 값 그대로 출력할 때 사용.
+				//이렇게 하지 않을거면 values(?,?...)쓴 부분에서 5번째에(?,?,?,?,now(),?,?....)로 쓸 수 있다.
+				
+				
+				int update = pstmt.executeUpdate(); //sql문이 insert이기 때문에 executeUpdate()!
+				System.out.println("게시판의 글 수정 성공유무(update)=>" + update);
+				
+				x=1; //성공
+				}else {
+					x=0; //수정실패
+				}
+				}//--if(rs.next())의 괄호
+			}catch(Exception e) {
+				System.out.println("insertArticle()메서드 에러 유발=>" + e);
+			}finally {
+				pool.freeConnection(con, pstmt, rs);
+			}
+			return x;//x의 값을 반환
+	}
 	
 	
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	//글 삭제 시켜주는 메서드 => 회원탈퇴 메서드와 동일(삭제 전 암호를 물어본다!)
+	//public int deleteArticle(int num, String passwd){}
 }

@@ -3,7 +3,7 @@
 <%@ page import ="kjh.board.*, java.util.*, java.text.SimpleDateFormat" %>
 <%!
 	int pageSize = 10; //numPerPage (PageSize) - 페이지당 보여주는 게시물 수
-	int blockSize = 10; //pagePerBlock  - 블럭당 보여주는 페이지 수
+	int blockSize = 2; //pagePerBlock  - 블럭당 보여주는 페이지 수
 	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm"); //게시물 작성 날짜 포멧 변경 (연,월,일 시,분)
 %>
 <%
