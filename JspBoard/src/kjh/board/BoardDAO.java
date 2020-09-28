@@ -1,85 +1,85 @@
 package kjh.board;
 
 import java.sql.*;
-import java.util.*; //ArrayList, List¸¦ »ç¿ë
+import java.util.*; //ArrayList, Listë¥¼ ì‚¬ìš©
 
-//DB¿¡ Á¢¼ÓÇØ¼­ À¥»ó¿¡¼­ È£ÃâÇÒ ¸Ş¼­µå¸¦ ÀÛ¼ºÇÏ´Â Å¬·¡½º.
+//DBì— ì ‘ì†í•´ì„œ ì›¹ìƒì—ì„œ í˜¸ì¶œí•  ë©”ì„œë“œë¥¼ ì‘ì„±í•˜ëŠ” í´ë˜ìŠ¤.
 public class BoardDAO {
-	private DBConnectionMgr pool = null; //1. °¡Á®¿Ã °´Ã¼¸¦ ¸â¹öº¯¼ö·Î ¼±¾ğÇÑ´Ù.
-	Connection con = null; //Á¢¼Ó°´Ã¼
-	PreparedStatement pstmt = null; //sql¹®À» ³ÖÀ» °÷
-	ResultSet rs = null; // ÃÊ±â°ª (select°ªÀ» Å×ÀÌºí ÇüÅÂ·Î ¹Ş±â À§ÇØ ÇÊ¿ä)
-	String sql = ""; //sql±¸¹®À» ÀúÀåÇÒ º¯¼ö
+	private DBConnectionMgr pool = null; //1. ê°€ì ¸ì˜¬ ê°ì²´ë¥¼ ë©¤ë²„ë³€ìˆ˜ë¡œ ì„ ì–¸í•œë‹¤.
+	Connection con = null; //ì ‘ì†ê°ì²´
+	PreparedStatement pstmt = null; //sqlë¬¸ì„ ë„£ì„ ê³³
+	ResultSet rs = null; // ì´ˆê¸°ê°’ (selectê°’ì„ í…Œì´ë¸” í˜•íƒœë¡œ ë°›ê¸° ìœ„í•´ í•„ìš”)
+	String sql = ""; //sqlêµ¬ë¬¸ì„ ì €ì¥í•  ë³€ìˆ˜
 	
-	public BoardDAO(){//2. »ı¼ºÀÚ - ÃÊ±â°ª ¼³Á¤
-		//DB¸¦ ¿¬°áÇÏÁö ¸øÇß´Ù¸é
+	public BoardDAO(){//2. ìƒì„±ì - ì´ˆê¸°ê°’ ì„¤ì •
+		//DBë¥¼ ì—°ê²°í•˜ì§€ ëª»í–ˆë‹¤ë©´
 		try {
-			pool = DBConnectionMgr.getInstance(); //Á¤Àû¸Ş¼­µå´Â Å¬·¡½º¸í.Á¤Àû¸Ş¼­µå¸í(); À¸·Î È£Ãâ
+			pool = DBConnectionMgr.getInstance(); //ì •ì ë©”ì„œë“œëŠ” í´ë˜ìŠ¤ëª….ì •ì ë©”ì„œë“œëª…(); ìœ¼ë¡œ í˜¸ì¶œ
 			System.out.println("pool=>" + pool);
 		}catch(Exception e) {
-			System.out.println("DB¿¬°á ½ÇÆĞ(poolÀ» ¾ò¾î¿ÀÁö ¸øÇÔ)=>" + e);
+			System.out.println("DBì—°ê²° ì‹¤íŒ¨(poolì„ ì–»ì–´ì˜¤ì§€ ëª»í•¨)=>" + e);
 		}
 	}
 	
-	//1. ÃÑ ·¹ÄÚµå¼ö¸¦ ±¸ÇØÁÖ´Â ¸Ş¼­µå ÇÊ¿ä
-		//¸Ş¼­µå ¸¸µå´Â ±ÔÄ¢ -> Á¦ÀÏ ¸ÕÀú SQL¹®À» Àû¾îº»´Ù.
-		//Çü½Ä) select count(*) from board;
-	//À¥»ó¿¡¼­ÀÇ Á¢±ÙÁöÁ¤ÀÚ´Â °ÅÀÇ ´Ù public, select´Â ¹İÈ¯ÇüÀÌ ÀÖ´Ù., whereÁ¶°ÇÀÌ ¾øÀ¸¸é ¸Å°³º¯¼ö ¾ø´Ù. 
+	//1. ì´ ë ˆì½”ë“œìˆ˜ë¥¼ êµ¬í•´ì£¼ëŠ” ë©”ì„œë“œ í•„ìš”
+		//ë©”ì„œë“œ ë§Œë“œëŠ” ê·œì¹™ -> ì œì¼ ë¨¼ì € SQLë¬¸ì„ ì ì–´ë³¸ë‹¤.
+		//í˜•ì‹) select count(*) from board;
+	//ì›¹ìƒì—ì„œì˜ ì ‘ê·¼ì§€ì •ìëŠ” ê±°ì˜ ë‹¤ public, selectëŠ” ë°˜í™˜í˜•ì´ ìˆë‹¤., whereì¡°ê±´ì´ ì—†ìœ¼ë©´ ë§¤ê°œë³€ìˆ˜ ì—†ë‹¤. 
 	public int getArticleCount() {
-		//1. DBÁ¢¼Ó ±¸¹®
+		//1. DBì ‘ì† êµ¬ë¬¸
 		int x = 0;
-		//2. SQL±¸¹® - ¿À·ù°¡ ¹ß»ıÇÒ ¶§ ÇØ°áÇÏ±â À§ÇÔ.
+		//2. SQLêµ¬ë¬¸ - ì˜¤ë¥˜ê°€ ë°œìƒí•  ë•Œ í•´ê²°í•˜ê¸° ìœ„í•¨.
 		try {
-			con = pool.getConnection(); //conÀº pool°´Ã¼¿¡¼­ ¾ò¾î¿Â´Ù. (10°³ Áß¿¡¼­ ÇÑ °³¸¦ ºô·ÁÁØ´Ù) -> default°ªÀÌ 10ÀÌ´Ù.
-			                                      // -> Ä¿³Ø¼Ç Ç® (ÇÊ¿äÇÒ ¶§¸¶´Ù °´Ã¼(connection)¸¦ ºô·ÁÁÖ°í, ÇÊ¿ä ¾øÀ¸¸é ¹İ³³ÇÑ´Ù.)
-			                                     //¹Ì¸® ¸¸µé¾î¼­ ºô·ÁÁØ´Ù. (¾à°£ ¿öÅÍÆÄÅ©ÀÇ ±¸¸íÁ¶³¢ °°Àº ´À³¦...?)
+			con = pool.getConnection(); //conì€ poolê°ì²´ì—ì„œ ì–»ì–´ì˜¨ë‹¤. (10ê°œ ì¤‘ì—ì„œ í•œ ê°œë¥¼ ë¹Œë ¤ì¤€ë‹¤) -> defaultê°’ì´ 10ì´ë‹¤.
+			                                      // -> ì»¤ë„¥ì…˜ í’€ (í•„ìš”í•  ë•Œë§ˆë‹¤ ê°ì²´(connection)ë¥¼ ë¹Œë ¤ì£¼ê³ , í•„ìš” ì—†ìœ¼ë©´ ë°˜ë‚©í•œë‹¤.)
+			                                     //ë¯¸ë¦¬ ë§Œë“¤ì–´ì„œ ë¹Œë ¤ì¤€ë‹¤. (ì•½ê°„ ì›Œí„°íŒŒí¬ì˜ êµ¬ëª…ì¡°ë¼ ê°™ì€ ëŠë‚Œ...?)
 			System.out.println("con=>" + con);
-			sql = "select count(*) from board"; //count(*)´Â ÇÊµå°¡ ¾Æ´Ï´Ù. 
-			pstmt = con.prepareStatement(sql);//sql¹®Àå½ÇÇà
-			rs = pstmt.executeQuery(); //select¹®ÀÌ±â ¶§¹®¿¡ executeQuery()¸¦ ¾´´Ù.
+			sql = "select count(*) from board"; //count(*)ëŠ” í•„ë“œê°€ ì•„ë‹ˆë‹¤. 
+			pstmt = con.prepareStatement(sql);//sqlë¬¸ì¥ì‹¤í–‰
+			rs = pstmt.executeQuery(); //selectë¬¸ì´ê¸° ë•Œë¬¸ì— executeQuery()ë¥¼ ì“´ë‹¤.
 			
-			//ÃÑ ·¹ÄÚµå ¼ö¸¦ ±¸Çß´Ù¸é
+			//ì´ ë ˆì½”ë“œ ìˆ˜ë¥¼ êµ¬í–ˆë‹¤ë©´
 			if(rs.next()) {
-				x = rs.getInt(1); //count(*)´Â ÇÊµå°¡ ¾Æ´Ï±â ¶§¹®¿¡ ÇÊµå¸íÀ¸·Î ºÒ·¯¿Ã ¼ö°¡ ¾ø´Ù. (±×·ìÇÔ¼öÀÇ °á°ú¹°ÀÌ±â ¶§¹®¿¡)
+				x = rs.getInt(1); //count(*)ëŠ” í•„ë“œê°€ ì•„ë‹ˆê¸° ë•Œë¬¸ì— í•„ë“œëª…ìœ¼ë¡œ ë¶ˆëŸ¬ì˜¬ ìˆ˜ê°€ ì—†ë‹¤. (ê·¸ë£¹í•¨ìˆ˜ì˜ ê²°ê³¼ë¬¼ì´ê¸° ë•Œë¬¸ì—)
 			}
 		}catch(Exception e) {
-			System.out.println("getArticleCount()¸Ş¼­µå È£Ãâ ¿¡·¯ =>" + e);
+			System.out.println("getArticleCount()ë©”ì„œë“œ í˜¸ì¶œ ì—ëŸ¬ =>" + e);
 		}
-		finally{//3. ¸Ş¸ğ¸® ÇØÁ¦, Á¾·á
+		finally{//3. ë©”ëª¨ë¦¬ í•´ì œ, ì¢…ë£Œ
 			pool.freeConnection(con, pstmt, rs); //con.close(), pstmt.close(), rs.close()
 		}
-		return x; //¹İÈ¯°ªÀÌ ÀÖÀ¸´Ï±î ¸®ÅÏ!
+		return x; //ë°˜í™˜ê°’ì´ ìˆìœ¼ë‹ˆê¹Œ ë¦¬í„´!
 	}
 	
 	
 	
 	
-	//2. ±Û ¸ñ·Ï º¸±â¿¡ ´ëÇÑ ¸Ş¼­µå ±¸Çö -> ¹üÀ§¸¦ ÁöÁ¤ / zipcode¸¦ °¡Áö°í ±¸ÇöÇØº¼ °ÍÀÓ
-	                         //·¹ÄÚµå ½ÃÀÛ¹øÈ£, ºÒ·¯¿Ã ·¹ÄÚµåÀÇ °³¼ö
-	public List getArticles (int start, int end){//·¹ÄÚµå°¡ ¿©·¯°³ÀÌ±â ¶§¹®¿¡
-			//1. DBÁ¢¼Ó ±¸¹®
+	//2. ê¸€ ëª©ë¡ ë³´ê¸°ì— ëŒ€í•œ ë©”ì„œë“œ êµ¬í˜„ -> ë²”ìœ„ë¥¼ ì§€ì • / zipcodeë¥¼ ê°€ì§€ê³  êµ¬í˜„í•´ë³¼ ê²ƒì„
+	                         //ë ˆì½”ë“œ ì‹œì‘ë²ˆí˜¸, ë¶ˆëŸ¬ì˜¬ ë ˆì½”ë“œì˜ ê°œìˆ˜
+	public List getArticles (int start, int end){//ë ˆì½”ë“œê°€ ì—¬ëŸ¬ê°œì´ê¸° ë•Œë¬¸ì—
+			//1. DBì ‘ì† êµ¬ë¬¸
 			List articleList = null; // = ArrayList articleList = null; 
 			
-			//2. SQL±¸¹® - ¿À·ù°¡ ¹ß»ıÇÒ ¶§ ÇØ°áÇÏ±â À§ÇÔ.
+			//2. SQLêµ¬ë¬¸ - ì˜¤ë¥˜ê°€ ë°œìƒí•  ë•Œ í•´ê²°í•˜ê¸° ìœ„í•¨.
 			try {
-				con = pool.getConnection(); //conÀº pool°´Ã¼¿¡¼­ ¾ò¾î¿Â´Ù. (10°³ Áß¿¡¼­ ÇÑ °³¸¦ ºô·ÁÁØ´Ù) -> default°ªÀÌ 10ÀÌ´Ù.
-				                                      // -> Ä¿³Ø¼Ç Ç® (ÇÊ¿äÇÒ ¶§¸¶´Ù °´Ã¼(connection)¸¦ ºô·ÁÁÖ°í, ÇÊ¿ä ¾øÀ¸¸é ¹İ³³ÇÑ´Ù.)
-				                                     //¹Ì¸® ¸¸µé¾î¼­ ºô·ÁÁØ´Ù. (¾à°£ ¿öÅÍÆÄÅ©ÀÇ ±¸¸íÁ¶³¢ °°Àº ´À³¦...?)
+				con = pool.getConnection(); //conì€ poolê°ì²´ì—ì„œ ì–»ì–´ì˜¨ë‹¤. (10ê°œ ì¤‘ì—ì„œ í•œ ê°œë¥¼ ë¹Œë ¤ì¤€ë‹¤) -> defaultê°’ì´ 10ì´ë‹¤.
+				                                      // -> ì»¤ë„¥ì…˜ í’€ (í•„ìš”í•  ë•Œë§ˆë‹¤ ê°ì²´(connection)ë¥¼ ë¹Œë ¤ì£¼ê³ , í•„ìš” ì—†ìœ¼ë©´ ë°˜ë‚©í•œë‹¤.)
+				                                     //ë¯¸ë¦¬ ë§Œë“¤ì–´ì„œ ë¹Œë ¤ì¤€ë‹¤. (ì•½ê°„ ì›Œí„°íŒŒí¬ì˜ êµ¬ëª…ì¡°ë¼ ê°™ì€ ëŠë‚Œ...?)
 				System.out.println("con=>" + con);
-				sql = "select * from board order by ref desc, re_step asc limit ?,?"; //ref -> ±×·ì¹øÈ£, desc->³»¸²Â÷¼ø / limit ?,? -> ?ºÎÅÍ ?±îÁö ÇØ´çÇÏ´Â °Í¸¸ º¸¿©´Ş¶ó~
-				pstmt = con.prepareStatement(sql);//sql¹®Àå½ÇÇà
-				pstmt.setInt(1, start-1); //sql¹®Àå¿¡ ?°¡ ÀÖÀ¸´Ï °ªÀ» ³Ö¾îÁÖÀÚ  / MySQLÀº ·¹ÄÚµå¼ø¹øÀÌ ³»ºÎÀûÀ¸·Î 0ºÎÅÍ ½ÃÀÛÇÏ±â ¶§¹®¿¡ -1À» »©ÁØ´Ù.
+				sql = "select * from board order by ref desc, re_step asc limit ?,?"; //ref -> ê·¸ë£¹ë²ˆí˜¸, desc->ë‚´ë¦¼ì°¨ìˆœ / limit ?,? -> ?ë¶€í„° ?ê¹Œì§€ í•´ë‹¹í•˜ëŠ” ê²ƒë§Œ ë³´ì—¬ë‹¬ë¼~
+				pstmt = con.prepareStatement(sql);//sqlë¬¸ì¥ì‹¤í–‰
+				pstmt.setInt(1, start-1); //sqlë¬¸ì¥ì— ?ê°€ ìˆìœ¼ë‹ˆ ê°’ì„ ë„£ì–´ì£¼ì  / MySQLì€ ë ˆì½”ë“œìˆœë²ˆì´ ë‚´ë¶€ì ìœ¼ë¡œ 0ë¶€í„° ì‹œì‘í•˜ê¸° ë•Œë¬¸ì— -1ì„ ë¹¼ì¤€ë‹¤.
 				pstmt.setInt(2, end);
-				rs = pstmt.executeQuery(); //select¹®ÀÌ±â ¶§¹®¿¡ executeQuery()¸¦ ¾´´Ù.
+				rs = pstmt.executeQuery(); //selectë¬¸ì´ê¸° ë•Œë¬¸ì— executeQuery()ë¥¼ ì“´ë‹¤.
 				
-				//ÃÑ ·¹ÄÚµå ¼ö¸¦ ±¸Çß´Ù¸é
-				if(rs.next()) { //·¹ÄÚµå°¡ ÇÑ°³¶óµµ Á¸ÀçÇÑ´Ù¸é
-					//articleList = new List(); ÀÎÅÍÆäÀÌ½º´Â ÀÚ±â ÀÚ½ÅÀº °´Ã¼¸¦ »ı¼ºÇÒ ¼ö ¾ø´Ù. 
-					articleList = new ArrayList(end); //È­¸é¿¡ º¸¿©Áú °Ô½Ã±ÛÀº end°³¼ö ¸¸Å­.(end°³¼ö¸¸Å­ µ¥ÀÌÅÍ¸¦ ´ãÀ» °ø°£ »ı¼º)
-					do { //Ã£Àº ·¹ÄÚµåÀÇ ÇÊµåº°·Î ÀúÀå
+				//ì´ ë ˆì½”ë“œ ìˆ˜ë¥¼ êµ¬í–ˆë‹¤ë©´
+				if(rs.next()) { //ë ˆì½”ë“œê°€ í•œê°œë¼ë„ ì¡´ì¬í•œë‹¤ë©´
+					//articleList = new List(); ì¸í„°í˜ì´ìŠ¤ëŠ” ìê¸° ìì‹ ì€ ê°ì²´ë¥¼ ìƒì„±í•  ìˆ˜ ì—†ë‹¤. 
+					articleList = new ArrayList(end); //í™”ë©´ì— ë³´ì—¬ì§ˆ ê²Œì‹œê¸€ì€ endê°œìˆ˜ ë§Œí¼.(endê°œìˆ˜ë§Œí¼ ë°ì´í„°ë¥¼ ë‹´ì„ ê³µê°„ ìƒì„±)
+					do { //ì°¾ì€ ë ˆì½”ë“œì˜ í•„ë“œë³„ë¡œ ì €ì¥
 						/*
 						BoardDTO article = new BoardDTO();
-						article.setNum(rs.getInt("num"));//°Ô½Ã¹° ¹øÈ£¸¦ ºÒ·¯¿Â´Ù. 
+						article.setNum(rs.getInt("num"));//ê²Œì‹œë¬¼ ë²ˆí˜¸ë¥¼ ë¶ˆëŸ¬ì˜¨ë‹¤. 
 						article.setWriter(rs.getString("writer"));
 						article.setEmail(rs.getString("email"));
 						article.setSubject(rs.getString("subject"));
@@ -87,13 +87,13 @@ public class BoardDAO {
 						article.setContent(rs.getString("content"));
 						article.setIp(rs.getString("ip"));
 						
-						article.setRegdate(rs.getTimestamp("reg_date"));//ÀÛ¼º³¯Â¥ (¿À´Ã³¯Â¥)
-						article.setReadcount(rs.getInt("readcount")); //Á¶È¸¼ö
+						article.setRegdate(rs.getTimestamp("reg_date"));//ì‘ì„±ë‚ ì§œ (ì˜¤ëŠ˜ë‚ ì§œ)
+						article.setReadcount(rs.getInt("readcount")); //ì¡°íšŒìˆ˜
 						
-						//-----------------´ñ±Û----------------
-						article.setRef(rs.getInt("ref")); //±×·ì¹øÈ£
-						article.setRe_step(rs.getInt("re_step")); //´äº¯±Û ¼ø¼­
-						article.setRe_level(rs.getInt("re_level")); //´äº¯ÀÇ ±íÀÌ 
+						//-----------------ëŒ“ê¸€----------------
+						article.setRef(rs.getInt("ref")); //ê·¸ë£¹ë²ˆí˜¸
+						article.setRe_step(rs.getInt("re_step")); //ë‹µë³€ê¸€ ìˆœì„œ
+						article.setRe_level(rs.getInt("re_level")); //ë‹µë³€ì˜ ê¹Šì´ 
 						//-------------------------------------
 						
 						article.setContent(rs.getString("content"));
@@ -101,141 +101,141 @@ public class BoardDAO {
 						*/
 						BoardDTO article = makeArticleFromResult();
 						
-						//Ãß°¡ÇÏ±â
-						articleList.add(article); //À§ÀÇ ·¹ÄÚµåµéÀ» articleList¿¡ Ãß°¡ÇØÁÜ. 
+						//ì¶”ê°€í•˜ê¸°
+						articleList.add(article); //ìœ„ì˜ ë ˆì½”ë“œë“¤ì„ articleListì— ì¶”ê°€í•´ì¤Œ. 
 					}while(rs.next());
 				}
 			}catch(Exception e) {
-				System.out.println("getArticles()¸Ş¼­µå È£Ãâ ¿¡·¯ =>" + e);
+				System.out.println("getArticles()ë©”ì„œë“œ í˜¸ì¶œ ì—ëŸ¬ =>" + e);
 			}
-			finally{//3. ¸Ş¸ğ¸® ÇØÁ¦, Á¾·á
+			finally{//3. ë©”ëª¨ë¦¬ í•´ì œ, ì¢…ë£Œ
 				pool.freeConnection(con, pstmt, rs); //con.close(), pstmt.close(), rs.close()
 			}
-			return articleList; //list.jsp¿¡¼­ articleList¸¦ for¹®À» ¸¸µé °ÍÀÓ.
+			return articleList; //list.jspì—ì„œ articleListë¥¼ forë¬¸ì„ ë§Œë“¤ ê²ƒì„.
 	}
 	
 	
 	
-	//±Û¾²±â
+	//ê¸€ì“°ê¸°
 	//insert into board values()
-	public void insertArticle(BoardDTO article) { //½Å±Ô±ÛÀÎÁö ´äº¯±ÛÀÎÁö Á¤ÇØÁÖ´Â ±â´ÉÀ» °¡Áü.
-		//¹Ş¾Æ¾ßÇÏ´Â ¸Å°³º¯¼ö°¡ ¸¹±â ¶§¹®¿¡ BoardDTO¸¦ articleÀÌ¶ó´Â ÀÌ¸§À¸·Î ¹Ş¾Æ¿Â´Ù.
-		//writePro.jsp¿¡¼­ È£ÃâÇÏ´Âµ¥ ½Å±Ô±ÛÀÎÁö ´äº¯±ÛÀÎÁö ¾î¶»°Ô È®ÀÎÀ» ÇÒ±î? => articleÀ» °¡Áö°í È®ÀÎÇÑ´Ù.
-		int num = article.getNum();//°Ô½Ã±Û¹øÈ£ ---> ½Å±Ô±ÛÀÌ³Ä ´äº¯±ÛÀÌ³Ä ±¸ºĞÀ» À§ÇØ
+	public void insertArticle(BoardDTO article) { //ì‹ ê·œê¸€ì¸ì§€ ë‹µë³€ê¸€ì¸ì§€ ì •í•´ì£¼ëŠ” ê¸°ëŠ¥ì„ ê°€ì§.
+		//ë°›ì•„ì•¼í•˜ëŠ” ë§¤ê°œë³€ìˆ˜ê°€ ë§ê¸° ë•Œë¬¸ì— BoardDTOë¥¼ articleì´ë¼ëŠ” ì´ë¦„ìœ¼ë¡œ ë°›ì•„ì˜¨ë‹¤.
+		//writePro.jspì—ì„œ í˜¸ì¶œí•˜ëŠ”ë° ì‹ ê·œê¸€ì¸ì§€ ë‹µë³€ê¸€ì¸ì§€ ì–´ë–»ê²Œ í™•ì¸ì„ í• ê¹Œ? => articleì„ ê°€ì§€ê³  í™•ì¸í•œë‹¤.
+		int num = article.getNum();//ê²Œì‹œê¸€ë²ˆí˜¸ ---> ì‹ ê·œê¸€ì´ëƒ ë‹µë³€ê¸€ì´ëƒ êµ¬ë¶„ì„ ìœ„í•´
 		int ref = article.getRef();
 		int re_step = article.getRe_step();
 		int re_level = article.getRe_level();
-		//Å×ÀÌºí¿¡ ÀÔ·ÂÇÒ °Ô½Ã¹° ¹øÈ£¸¦ ÀúÀåÇÒ º¯¼ö
-		int number = 0; //--> µ¥ÀÌÅÍ¸¦ ³Ö±â À§ÇØ ÇÊ¿ä
-		System.out.println("insertArticle¸Ş¼­µåÀÇ ³»ºÎÀÇ num=>" + num);
+		//í…Œì´ë¸”ì— ì…ë ¥í•  ê²Œì‹œë¬¼ ë²ˆí˜¸ë¥¼ ì €ì¥í•  ë³€ìˆ˜
+		int number = 0; //--> ë°ì´í„°ë¥¼ ë„£ê¸° ìœ„í•´ í•„ìš”
+		System.out.println("insertArticleë©”ì„œë“œì˜ ë‚´ë¶€ì˜ num=>" + num);
 		System.out.println("ref=>"+ ref + ", re_step=>" + re_step + ", re_level=>" + re_level);
 		
-	//°Ô½Ã¹° ¹øÈ£ + 1 -> ´ÙÀ½¹ø¿¡ °Ô½Ã±ÛÀ» ¾²¸é ¹øÈ£°¡ +1ÀÌ µÇ´Â °Í.
+	//ê²Œì‹œë¬¼ ë²ˆí˜¸ + 1 -> ë‹¤ìŒë²ˆì— ê²Œì‹œê¸€ì„ ì“°ë©´ ë²ˆí˜¸ê°€ +1ì´ ë˜ëŠ” ê²ƒ.
 		try {
-			con = pool.getConnection(); //Ç×»ó DB¸¦ ¸ÕÀú ¿¬°áÇÑ´Ù.
-			//SQL¹®Àå
-			sql = "select max(num) from board"; //board¿¡¼­ °¡Àå Å« numÀ» ±¸ÇØ¿Í¶ó 
-			pstmt = con.prepareStatement(sql); //pstmt¸¦ ¾ò¾î¿Í¾ß sql¹®ÀåÀ» ½ÇÇàÇÒ ¼ö ÀÖ´Ù.
-			//selectÀÌ±â ¶§¹®¿¡ result°ªÀ» ¾ò¾î¿Â´Ù., executeQuery()
-			//insert¿´´Ù¸é executeUpdate
+			con = pool.getConnection(); //í•­ìƒ DBë¥¼ ë¨¼ì € ì—°ê²°í•œë‹¤.
+			//SQLë¬¸ì¥
+			sql = "select max(num) from board"; //boardì—ì„œ ê°€ì¥ í° numì„ êµ¬í•´ì™€ë¼ 
+			pstmt = con.prepareStatement(sql); //pstmtë¥¼ ì–»ì–´ì™€ì•¼ sqlë¬¸ì¥ì„ ì‹¤í–‰í•  ìˆ˜ ìˆë‹¤.
+			//selectì´ê¸° ë•Œë¬¸ì— resultê°’ì„ ì–»ì–´ì˜¨ë‹¤., executeQuery()
+			//insertì˜€ë‹¤ë©´ executeUpdate
 			rs = pstmt.executeQuery();
 			
-			if(rs.next()) { //ÇöÀç Å×ÀÌºí¿¡¼­ µ¥ÀÌÅÍ°¡ ÇÑ°³¶óµµ Á¸ÀçÇÏ¸é
-				number = rs.getInt(1)+1; //1-->ÃÖ´ë°ª.  +1 --> ±âÁ¸ÀÇ °ª¿¡ °ªÀ» ´õÇÏ±â À§ÇØ +¸¦ ¾¸
+			if(rs.next()) { //í˜„ì¬ í…Œì´ë¸”ì—ì„œ ë°ì´í„°ê°€ í•œê°œë¼ë„ ì¡´ì¬í•˜ë©´
+				number = rs.getInt(1)+1; //1-->ìµœëŒ€ê°’.  +1 --> ê¸°ì¡´ì˜ ê°’ì— ê°’ì„ ë”í•˜ê¸° ìœ„í•´ +ë¥¼ ì”€
 			}else {
-				number = 1; //°Ô½Ã±ÛÀÌ ÇÏ³ªµµ ¾ø´Â »óÅÂ¶ó¸é Áö±İ µé¾î°¡´Â °ªÀÌ 1ÀÌ µÇ¾î¾ß ÇÑ´Ù. 
+				number = 1; //ê²Œì‹œê¸€ì´ í•˜ë‚˜ë„ ì—†ëŠ” ìƒíƒœë¼ë©´ ì§€ê¸ˆ ë“¤ì–´ê°€ëŠ” ê°’ì´ 1ì´ ë˜ì–´ì•¼ í•œë‹¤. 
 			}
 			
 			
-			//¸¸¾à¿¡ ´äº¯±ÛÀÌ¶ó¸é
+			//ë§Œì•½ì— ë‹µë³€ê¸€ì´ë¼ë©´
 			if(num != 0) {
-				//¡ÚÁß¿ä¡Ú
-				//°ªÀÌ µé¾î°¥ ÀÚ¸®¸¦ ¸¸µç´Ù. set re_step + 1
-				sql = "update board set re_step=re_step+1 where ref=? and re_step > ?"; //±âÁ¸¿¡ ÀÖ´ø µ¥ÀÌÅÍµéÀ» ´Ù µÚ·Î ¹Ğ¸®°Ô ÇØ¾ß ÇÑ´Ù.
-						//°°Àº ±×·ì ¹øÈ£ÀÌ¸é¼­ ³ªº¸´Ù step°ªÀÌ Å« °Ô½Ã¹°À» Ã£¾Æ¼­ ±× step°ªÀ» 1 Áõ°¡½ÃÄÑ¶ó
-				pstmt = con.prepareStatement(sql); //sql¹®À» ½ÇÇàÇÒ °ÍÀÌ´Ù~
+				//â˜…ì¤‘ìš”â˜…
+				//ê°’ì´ ë“¤ì–´ê°ˆ ìë¦¬ë¥¼ ë§Œë“ ë‹¤. set re_step + 1
+				sql = "update board set re_step=re_step+1 where ref=? and re_step > ?"; //ê¸°ì¡´ì— ìˆë˜ ë°ì´í„°ë“¤ì„ ë‹¤ ë’¤ë¡œ ë°€ë¦¬ê²Œ í•´ì•¼ í•œë‹¤.
+						//ê°™ì€ ê·¸ë£¹ ë²ˆí˜¸ì´ë©´ì„œ ë‚˜ë³´ë‹¤ stepê°’ì´ í° ê²Œì‹œë¬¼ì„ ì°¾ì•„ì„œ ê·¸ stepê°’ì„ 1 ì¦ê°€ì‹œì¼œë¼
+				pstmt = con.prepareStatement(sql); //sqlë¬¸ì„ ì‹¤í–‰í•  ê²ƒì´ë‹¤~
 				pstmt.setInt(1, ref);
-				pstmt.setInt(2, re_step); //°ªÀ» ¼ø¼­´ë·Î ³Ö´Â´Ù.
-				int update = pstmt.executeUpdate();//sql¹®À» ½ÇÇàÇØº»´Ù.
-				System.out.println("´ñ±Û¼öÁ¤À¯¹«(update)=>" + update);
+				pstmt.setInt(2, re_step); //ê°’ì„ ìˆœì„œëŒ€ë¡œ ë„£ëŠ”ë‹¤.
+				int update = pstmt.executeUpdate();//sqlë¬¸ì„ ì‹¤í–‰í•´ë³¸ë‹¤.
+				System.out.println("ëŒ“ê¸€ìˆ˜ì •ìœ ë¬´(update)=>" + update);
 
-				re_step = re_step+1; //´ä±ÛÀ» ´Ş ¶§¸¶´Ù ±âÁ¸°ªÀÌ ÇÏ³ª¾¿ Áõ°¡ÇÑ´Ù.
+				re_step = re_step+1; //ë‹µê¸€ì„ ë‹¬ ë•Œë§ˆë‹¤ ê¸°ì¡´ê°’ì´ í•˜ë‚˜ì”© ì¦ê°€í•œë‹¤.
 				re_level = re_level+1;
-			}else { //½Å±Ô±ÛÀÌ¶ó¸é
-				ref=number; //ref=1,2,3,.... (±×·ì¹øÈ£Áö¸¸ °Ô½Ã±Û ¿ªÇÒÀ» ÇÑ´Ù.)-> refµµ °Ô½Ã¹° ±¸ºĞÀÚ·Î »ç¿ë °¡´É
+			}else { //ì‹ ê·œê¸€ì´ë¼ë©´
+				ref=number; //ref=1,2,3,.... (ê·¸ë£¹ë²ˆí˜¸ì§€ë§Œ ê²Œì‹œê¸€ ì—­í• ì„ í•œë‹¤.)-> refë„ ê²Œì‹œë¬¼ êµ¬ë¶„ìë¡œ ì‚¬ìš© ê°€ëŠ¥
 				re_step=0;
 				re_level=0;
 			}
-			//12°³ µ¥ÀÌÅÍ¸¦ ³ÖÀ¸¸é µÈ´Ù. ´Ù¸¸ ±× Áß¿¡¼­ num, reg_date, readcount´Â ÀÔ·Â ¹ŞÁö ¾Ê´Â´Ù.
-			//mysqlÀº ³¯Â¥¸¦ ÀÛ¼ºÇÒ ¶§ (now())¸¦ ¾´´Ù. / SQLÀº sysdate
+			//12ê°œ ë°ì´í„°ë¥¼ ë„£ìœ¼ë©´ ëœë‹¤. ë‹¤ë§Œ ê·¸ ì¤‘ì—ì„œ num, reg_date, readcountëŠ” ì…ë ¥ ë°›ì§€ ì•ŠëŠ”ë‹¤.
+			//mysqlì€ ë‚ ì§œë¥¼ ì‘ì„±í•  ë•Œ (now())ë¥¼ ì“´ë‹¤. / SQLì€ sysdate
 			sql = "insert into board(writer,email,subject,passwd,reg_date,ref, re_step, re_level, content,ip)values(?,?,?,?,?,?,?,?,?,?)";
 			pstmt = con.prepareStatement(sql);
-			//articleÀº À¥»óÀÇ µ¥ÀÌÅÍ¸¦ ±×´ë·Î ³Ö´Â°Í.
-			//articleÀÌ ¾ø´Â °ÍÀº ±×¶§ ±×¶§ °è»êÇØ¼­ ³Ö±â ¶§¹®¿¡ °ªÀÌ ¹Ù²ï´Ù.
-			pstmt.setString(1, article.getWriter()); //ÀÛ¼ºÀÚ
+			//articleì€ ì›¹ìƒì˜ ë°ì´í„°ë¥¼ ê·¸ëŒ€ë¡œ ë„£ëŠ”ê²ƒ.
+			//articleì´ ì—†ëŠ” ê²ƒì€ ê·¸ë•Œ ê·¸ë•Œ ê³„ì‚°í•´ì„œ ë„£ê¸° ë•Œë¬¸ì— ê°’ì´ ë°”ë€ë‹¤.
+			pstmt.setString(1, article.getWriter()); //ì‘ì„±ì
 			pstmt.setString(2, article.getEmail());
 			pstmt.setString(3, article.getSubject());
 			pstmt.setString(4, article.getPasswd());
 			pstmt.setTimestamp(5, article.getRegdate());
-			//articleÀº ÀúÀåÇÑ °ª ±×´ë·Î Ãâ·ÂÇÒ ¶§ »ç¿ë.
-			//ÀÌ·¸°Ô ÇÏÁö ¾ÊÀ»°Å¸é values(?,?...)¾´ ºÎºĞ¿¡¼­ 5¹øÂ°¿¡(?,?,?,?,now(),?,?....)·Î ¾µ ¼ö ÀÖ´Ù.
+			//articleì€ ì €ì¥í•œ ê°’ ê·¸ëŒ€ë¡œ ì¶œë ¥í•  ë•Œ ì‚¬ìš©.
+			//ì´ë ‡ê²Œ í•˜ì§€ ì•Šì„ê±°ë©´ values(?,?...)ì“´ ë¶€ë¶„ì—ì„œ 5ë²ˆì§¸ì—(?,?,?,?,now(),?,?....)ë¡œ ì“¸ ìˆ˜ ìˆë‹¤.
 			 
-			//------¡Ú¡Úref, re_step, re_level¡Ú¡Ú
-			pstmt.setInt(6, ref); //article.getRef()°¡ ¾Æ´Ñ ref¶ó´Â °Í ÁÖÀÇ!  => Áß°£¿¡ ½Å±Ô, ´äº¯±Û¿¡ ´ëÇÑ °ªÀÌ º¯°æµÇ±â ¶§¹®
+			//------â˜…â˜…ref, re_step, re_levelâ˜…â˜…
+			pstmt.setInt(6, ref); //article.getRef()ê°€ ì•„ë‹Œ refë¼ëŠ” ê²ƒ ì£¼ì˜!  => ì¤‘ê°„ì— ì‹ ê·œ, ë‹µë³€ê¸€ì— ëŒ€í•œ ê°’ì´ ë³€ê²½ë˜ê¸° ë•Œë¬¸
 			pstmt.setInt(7, re_step);
 			pstmt.setInt(8, re_level);
 			//------------------------------------------
 			
-			pstmt.setString(9,article.getContent()); //±Û ³»¿ë ±×´ë·Î ºÒ·¯¿Â´Ù.
-			pstmt.setString(10,article.getIp()); //request.getRemoteAddr(); --> Å¬¶óÀÌ¾ğÆ®ÀÇ ip¸¦ ¾ò¾î¿À´Â ¹æ¹ı
+			pstmt.setString(9,article.getContent()); //ê¸€ ë‚´ìš© ê·¸ëŒ€ë¡œ ë¶ˆëŸ¬ì˜¨ë‹¤.
+			pstmt.setString(10,article.getIp()); //request.getRemoteAddr(); --> í´ë¼ì´ì–¸íŠ¸ì˜ ipë¥¼ ì–»ì–´ì˜¤ëŠ” ë°©ë²•
 			
-			int insert = pstmt.executeUpdate(); //sql¹®ÀÌ insertÀÌ±â ¶§¹®¿¡ executeUpdate()!
-			System.out.println("°Ô½ÃÆÇÀÇ ±Û¾²±â ¼º°øÀ¯¹«(insert)=>" + insert);
+			int insert = pstmt.executeUpdate(); //sqlë¬¸ì´ insertì´ê¸° ë•Œë¬¸ì— executeUpdate()!
+			System.out.println("ê²Œì‹œíŒì˜ ê¸€ì“°ê¸° ì„±ê³µìœ ë¬´(insert)=>" + insert);
 			
 		}catch(Exception e) {
-			System.out.println("insertArticle()¸Ş¼­µå ¿¡·¯ À¯¹ß=>" + e);
+			System.out.println("insertArticle()ë©”ì„œë“œ ì—ëŸ¬ ìœ ë°œ=>" + e);
 		}finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
 	}
 	
-	//±Û »ó¼¼º¸±â ±¸ÇöÀ» ÇÏ´Â °ÍÀº~
-	//1. °Ô½Ã¹°¿¡ ÇØ´çµÇ´Â Á¶È¸¼ö¸¦ Áõ°¡½ÃÅ³ ¼ö ÀÖ´Ù.
-	//2. Áõ°¡µÈ Á¶È¸¼ö¸¦ °¡Áø ·¹ÄÚµå¸¦ °Ë»öÇØ¼­ È­¸é¿¡ Ãâ·ÂÇÒ ¼ö ÀÖ´Ù.
+	//ê¸€ ìƒì„¸ë³´ê¸° êµ¬í˜„ì„ í•˜ëŠ” ê²ƒì€~
+	//1. ê²Œì‹œë¬¼ì— í•´ë‹¹ë˜ëŠ” ì¡°íšŒìˆ˜ë¥¼ ì¦ê°€ì‹œí‚¬ ìˆ˜ ìˆë‹¤.
+	//2. ì¦ê°€ëœ ì¡°íšŒìˆ˜ë¥¼ ê°€ì§„ ë ˆì½”ë“œë¥¼ ê²€ìƒ‰í•´ì„œ í™”ë©´ì— ì¶œë ¥í•  ìˆ˜ ìˆë‹¤.
 	
-	//¸Ş¼­µå¸¦ ¸¸µé¾îº¸ÀÚ -> sql¹®Àå ¸ÕÀú ½áº¸±â!
-	//select * from board where num='Ã£°íÀÚÇÏ´Â °Ô½Ã±Û¹øÈ£';
-	//(È¸¿ø¼öÁ¤) select * from member where id = 'Ã£°íÀÚÇÏ´Â ¸â¹ö id';
-	//À¥»ó¿¡ È£ÃâÇÏ¸é ´Ù public
+	//ë©”ì„œë“œë¥¼ ë§Œë“¤ì–´ë³´ì -> sqlë¬¸ì¥ ë¨¼ì € ì¨ë³´ê¸°!
+	//select * from board where num='ì°¾ê³ ìí•˜ëŠ” ê²Œì‹œê¸€ë²ˆí˜¸';
+	//(íšŒì›ìˆ˜ì •) select * from member where id = 'ì°¾ê³ ìí•˜ëŠ” ë©¤ë²„ id';
+	//ì›¹ìƒì— í˜¸ì¶œí•˜ë©´ ë‹¤ public
 	public BoardDTO getArticle(int num){ 
-		BoardDTO article = null;//¹İÈ¯°ªÀÌ ÀÖ´Ù.(°Ô½Ã¹°¹øÈ£¿¡ ÇØ´çÇÏ´Â ·¹ÄÚµå ÇÑ°³¸¦ ´ãÀ» º¯¼ö ÇÊ¿ä)
+		BoardDTO article = null;//ë°˜í™˜ê°’ì´ ìˆë‹¤.(ê²Œì‹œë¬¼ë²ˆí˜¸ì— í•´ë‹¹í•˜ëŠ” ë ˆì½”ë“œ í•œê°œë¥¼ ë‹´ì„ ë³€ìˆ˜ í•„ìš”)
 		try {
-			con = pool.getConnection(); //connection°´Ã¼¸¦ ¸ÕÀú ¾ò¾î¿Â´Ù.
-			//sql¹®Àå
-			sql = "update board set readcount = readcount + 1 where num=?"; 	//±ÛÀ» ´©¸£¸é ±× ±ÛÀÇ Á¶È¸¼ö¸¦ Áõ°¡½ÃÄÑ¶ó
+			con = pool.getConnection(); //connectionê°ì²´ë¥¼ ë¨¼ì € ì–»ì–´ì˜¨ë‹¤.
+			//sqlë¬¸ì¥
+			sql = "update board set readcount = readcount + 1 where num=?"; 	//ê¸€ì„ ëˆ„ë¥´ë©´ ê·¸ ê¸€ì˜ ì¡°íšŒìˆ˜ë¥¼ ì¦ê°€ì‹œì¼œë¼
 
-			pstmt = con.prepareStatement(sql); //SQL¹®Àå ½ÇÇàÀ» À§ÇØ ÇÊ¿ä.
-			pstmt.setInt(1,num);//?¿¡ °ªÀ» ³Ö¾îÁØ´Ù.
+			pstmt = con.prepareStatement(sql); //SQLë¬¸ì¥ ì‹¤í–‰ì„ ìœ„í•´ í•„ìš”.
+			pstmt.setInt(1,num);//?ì— ê°’ì„ ë„£ì–´ì¤€ë‹¤.
 			
-			//¼öÁ¤À» ÇÏ´Â °ÍÀÌ±â ¶§¹®¿¡ ¹İÈ¯°ªÀ» ÁØ´Ù.
+			//ìˆ˜ì •ì„ í•˜ëŠ” ê²ƒì´ê¸° ë•Œë¬¸ì— ë°˜í™˜ê°’ì„ ì¤€ë‹¤.
 			int update = pstmt.executeUpdate();
-			System.out.println("Á¶È¸¼ö Áõ°¡ À¯¹«(update) =>" + update);
+			System.out.println("ì¡°íšŒìˆ˜ ì¦ê°€ ìœ ë¬´(update) =>" + update);
 			
-			//2¹øÂ° sql¹®Àå
-			sql = "select * from board where num=?"; //°Ô½Ã¹°¿¡ ÇØ´çµÇ´Â ·¹ÄÚµå ÀüÃ¼¸¦ ¾ò¾î¿Í¶ó
-			pstmt = con.prepareStatement(sql); //sql¹®ÀåÀ» ½ÇÇàÇÏ±â À§ÇØ ÇÊ¿ä
-			//?°¡ ÀÖÀ¸¹Ç·Î °ªÀ» ³Ö¾îÁØ´Ù.
+			//2ë²ˆì§¸ sqlë¬¸ì¥
+			sql = "select * from board where num=?"; //ê²Œì‹œë¬¼ì— í•´ë‹¹ë˜ëŠ” ë ˆì½”ë“œ ì „ì²´ë¥¼ ì–»ì–´ì™€ë¼
+			pstmt = con.prepareStatement(sql); //sqlë¬¸ì¥ì„ ì‹¤í–‰í•˜ê¸° ìœ„í•´ í•„ìš”
+			//?ê°€ ìˆìœ¼ë¯€ë¡œ ê°’ì„ ë„£ì–´ì¤€ë‹¤.
 			pstmt.setInt(1, num);
-			rs = pstmt.executeQuery();//select¸¦ »ç¿ëÇßÀ¸¹Ç·Î ÇÊ¿äÇÏ´Ù, selectÀÌ±â ¶§¹®¿¡ executeQuery
+			rs = pstmt.executeQuery();//selectë¥¼ ì‚¬ìš©í–ˆìœ¼ë¯€ë¡œ í•„ìš”í•˜ë‹¤, selectì´ê¸° ë•Œë¬¸ì— executeQuery
 			
-			//if´Â ·¹ÄÚµå°¡ ÇÑ °³ ÀÖÀ» ¶§ »ç¿ë
+			//ifëŠ” ë ˆì½”ë“œê°€ í•œ ê°œ ìˆì„ ë•Œ ì‚¬ìš©
 			if(rs.next()) {
-				//---------------article¿¡ ·¹ÄÚµå¸¦ ´ã´Â´Ù.---------------
+				//---------------articleì— ë ˆì½”ë“œë¥¼ ë‹´ëŠ”ë‹¤.---------------
 				article = makeArticleFromResult();
 				/*
-				article = new BoardDTO(); //°´Ã¼ ¸¸µê
+				article = new BoardDTO(); //ê°ì²´ ë§Œë“¦
 				
-				article.setNum(rs.getInt("num"));//°Ô½Ã¹° ¹øÈ£¸¦ ºÒ·¯¿Â´Ù. 
+				article.setNum(rs.getInt("num"));//ê²Œì‹œë¬¼ ë²ˆí˜¸ë¥¼ ë¶ˆëŸ¬ì˜¨ë‹¤. 
 				article.setWriter(rs.getString("writer"));
 				article.setEmail(rs.getString("email"));
 				article.setSubject(rs.getString("subject"));
@@ -243,13 +243,13 @@ public class BoardDAO {
 				article.setContent(rs.getString("content"));
 				article.setIp(rs.getString("ip"));
 				
-				article.setRegdate(rs.getTimestamp("reg_date"));//ÀÛ¼º³¯Â¥ (¿À´Ã³¯Â¥)
-				article.setReadcount(rs.getInt("readcount")); //Á¶È¸¼ö
+				article.setRegdate(rs.getTimestamp("reg_date"));//ì‘ì„±ë‚ ì§œ (ì˜¤ëŠ˜ë‚ ì§œ)
+				article.setReadcount(rs.getInt("readcount")); //ì¡°íšŒìˆ˜
 				
-				//-----------------´ñ±Û----------------
-				article.setRef(rs.getInt("ref")); //±×·ì¹øÈ£
-				article.setRe_step(rs.getInt("re_step")); //´äº¯±Û ¼ø¼­
-				article.setRe_level(rs.getInt("re_level")); //´äº¯ÀÇ ±íÀÌ 
+				//-----------------ëŒ“ê¸€----------------
+				article.setRef(rs.getInt("ref")); //ê·¸ë£¹ë²ˆí˜¸
+				article.setRe_step(rs.getInt("re_step")); //ë‹µë³€ê¸€ ìˆœì„œ
+				article.setRe_level(rs.getInt("re_level")); //ë‹µë³€ì˜ ê¹Šì´ 
 				//-------------------------------------
 				
 				article.setContent(rs.getString("content"));
@@ -257,35 +257,35 @@ public class BoardDAO {
 				*/
 			}
 		}catch(Exception e) {
-			System.out.println("getArticle()È£Ãâ ¿¡·¯=>" + e);
+			System.out.println("getArticle()í˜¸ì¶œ ì—ëŸ¬=>" + e);
 		}finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
-		return article;//¹İÈ¯°ª
+		return article;//ë°˜í™˜ê°’
 	}
 	
 	
-	//------------------±Û ¼öÁ¤-------------------
-	//1. ±Û ¼öÁ¤ÇÏ±â À§ÇÑ µ¥ÀÌÅÍ¸¦ À¥¿¡ Ãâ·ÂÇÒ ¸ñÀûÀÇ ¸Ş¼­µå
+	//------------------ê¸€ ìˆ˜ì •-------------------
+	//1. ê¸€ ìˆ˜ì •í•˜ê¸° ìœ„í•œ ë°ì´í„°ë¥¼ ì›¹ì— ì¶œë ¥í•  ëª©ì ì˜ ë©”ì„œë“œ
 	public BoardDTO updateGetArticle(int num) {
-		BoardDTO article = null;//¹İÈ¯°ªÀÌ ÀÖ´Ù.(°Ô½Ã¹°¹øÈ£¿¡ ÇØ´çÇÏ´Â ·¹ÄÚµå ÇÑ°³¸¦ ´ãÀ» º¯¼ö ÇÊ¿ä)
+		BoardDTO article = null;//ë°˜í™˜ê°’ì´ ìˆë‹¤.(ê²Œì‹œë¬¼ë²ˆí˜¸ì— í•´ë‹¹í•˜ëŠ” ë ˆì½”ë“œ í•œê°œë¥¼ ë‹´ì„ ë³€ìˆ˜ í•„ìš”)
 		try {
-			con = pool.getConnection(); //connection°´Ã¼¸¦ ¸ÕÀú ¾ò¾î¿Â´Ù.
+			con = pool.getConnection(); //connectionê°ì²´ë¥¼ ë¨¼ì € ì–»ì–´ì˜¨ë‹¤.
 			
-			sql = "select * from board where num=?"; //°Ô½Ã¹°¿¡ ÇØ´çµÇ´Â ·¹ÄÚµå ÀüÃ¼¸¦ ¾ò¾î¿Í¶ó
-			pstmt = con.prepareStatement(sql); //sql¹®ÀåÀ» ½ÇÇàÇÏ±â À§ÇØ ÇÊ¿ä
-			//?°¡ ÀÖÀ¸¹Ç·Î °ªÀ» ³Ö¾îÁØ´Ù.
+			sql = "select * from board where num=?"; //ê²Œì‹œë¬¼ì— í•´ë‹¹ë˜ëŠ” ë ˆì½”ë“œ ì „ì²´ë¥¼ ì–»ì–´ì™€ë¼
+			pstmt = con.prepareStatement(sql); //sqlë¬¸ì¥ì„ ì‹¤í–‰í•˜ê¸° ìœ„í•´ í•„ìš”
+			//?ê°€ ìˆìœ¼ë¯€ë¡œ ê°’ì„ ë„£ì–´ì¤€ë‹¤.
 			pstmt.setInt(1, num);
-			rs = pstmt.executeQuery();//select¸¦ »ç¿ëÇßÀ¸¹Ç·Î ÇÊ¿äÇÏ´Ù, selectÀÌ±â ¶§¹®¿¡ executeQuery
+			rs = pstmt.executeQuery();//selectë¥¼ ì‚¬ìš©í–ˆìœ¼ë¯€ë¡œ í•„ìš”í•˜ë‹¤, selectì´ê¸° ë•Œë¬¸ì— executeQuery
 			
-			//if´Â ·¹ÄÚµå°¡ ÇÑ °³ ÀÖÀ» ¶§ »ç¿ë
+			//ifëŠ” ë ˆì½”ë“œê°€ í•œ ê°œ ìˆì„ ë•Œ ì‚¬ìš©
 			if(rs.next()) {
-				article = makeArticleFromResult();//ÀÏ¹İÅ¬·¡½º->ÀÏ¹İÅ¬·¡½º È£ÃâÇÒ ¶§´Â ¸Ş¼­µå¸í();
-				//---------------article¿¡ ·¹ÄÚµå¸¦ ´ã´Â´Ù.---------------
+				article = makeArticleFromResult();//ì¼ë°˜í´ë˜ìŠ¤->ì¼ë°˜í´ë˜ìŠ¤ í˜¸ì¶œí•  ë•ŒëŠ” ë©”ì„œë“œëª…();
+				//---------------articleì— ë ˆì½”ë“œë¥¼ ë‹´ëŠ”ë‹¤.---------------
 				/*
-				article = new BoardDTO(); //°´Ã¼ ¸¸µê
+				article = new BoardDTO(); //ê°ì²´ ë§Œë“¦
 				
-				article.setNum(rs.getInt("num"));//°Ô½Ã¹° ¹øÈ£¸¦ ºÒ·¯¿Â´Ù. 
+				article.setNum(rs.getInt("num"));//ê²Œì‹œë¬¼ ë²ˆí˜¸ë¥¼ ë¶ˆëŸ¬ì˜¨ë‹¤. 
 				article.setWriter(rs.getString("writer"));
 				article.setEmail(rs.getString("email"));
 				article.setSubject(rs.getString("subject"));
@@ -293,13 +293,13 @@ public class BoardDAO {
 				article.setContent(rs.getString("content"));
 				article.setIp(rs.getString("ip"));
 				
-				article.setRegdate(rs.getTimestamp("reg_date"));//ÀÛ¼º³¯Â¥ (¿À´Ã³¯Â¥)
-				article.setReadcount(rs.getInt("readcount")); //Á¶È¸¼ö
+				article.setRegdate(rs.getTimestamp("reg_date"));//ì‘ì„±ë‚ ì§œ (ì˜¤ëŠ˜ë‚ ì§œ)
+				article.setReadcount(rs.getInt("readcount")); //ì¡°íšŒìˆ˜
 				
-				//-----------------´ñ±Û----------------
-				article.setRef(rs.getInt("ref")); //±×·ì¹øÈ£
-				article.setRe_step(rs.getInt("re_step")); //´äº¯±Û ¼ø¼­
-				article.setRe_level(rs.getInt("re_level")); //´äº¯ÀÇ ±íÀÌ 
+				//-----------------ëŒ“ê¸€----------------
+				article.setRef(rs.getInt("ref")); //ê·¸ë£¹ë²ˆí˜¸
+				article.setRe_step(rs.getInt("re_step")); //ë‹µë³€ê¸€ ìˆœì„œ
+				article.setRe_level(rs.getInt("re_level")); //ë‹µë³€ì˜ ê¹Šì´ 
 				//-------------------------------------
 				
 				article.setContent(rs.getString("content"));
@@ -307,20 +307,20 @@ public class BoardDAO {
 				*/
 			}
 		}catch(Exception e) {
-			System.out.println("getArticle()È£Ãâ ¿¡·¯=>" + e);
+			System.out.println("getArticle()í˜¸ì¶œ ì—ëŸ¬=>" + e);
 		}finally {
 			pool.freeConnection(con, pstmt, rs);
 		}
-		return article;//¹İÈ¯°ª
+		return article;//ë°˜í™˜ê°’
 	}
 	
-	//Áßº¹µÈ ·¹ÄÚµå ÇÑ°³¸¦ ´ãÀ» ¼ö ÀÖ´Â ¸Ş¼­µå¸¦ µû·Î ÀÛ¼ºÇØº¸ÀÚ.
-	//³»ºÎ¿¡¼­¸¸ ºÒ·¯¼­ »ç¿ëÇØ¾ß ÇÏ±â ¶§¹®¿¡ private!!
-	//privateÀÌ±â ¶§¹®¿¡ ´ë½Å ´ã¾Æ¼­ ¸®ÅÏÇÒ ¼ö ÀÖ´Â °ÍÀÌ ÇÊ¿äÇÏ´Ù.
-	private BoardDTO makeArticleFromResult() throws Exception{ //¿¹¿ÜÃ³¸® ÇÊ¿ä
-		BoardDTO article = new BoardDTO(); //°´Ã¼ ¸¸µê
+	//ì¤‘ë³µëœ ë ˆì½”ë“œ í•œê°œë¥¼ ë‹´ì„ ìˆ˜ ìˆëŠ” ë©”ì„œë“œë¥¼ ë”°ë¡œ ì‘ì„±í•´ë³´ì.
+	//ë‚´ë¶€ì—ì„œë§Œ ë¶ˆëŸ¬ì„œ ì‚¬ìš©í•´ì•¼ í•˜ê¸° ë•Œë¬¸ì— private!!
+	//privateì´ê¸° ë•Œë¬¸ì— ëŒ€ì‹  ë‹´ì•„ì„œ ë¦¬í„´í•  ìˆ˜ ìˆëŠ” ê²ƒì´ í•„ìš”í•˜ë‹¤.
+	private BoardDTO makeArticleFromResult() throws Exception{ //ì˜ˆì™¸ì²˜ë¦¬ í•„ìš”
+		BoardDTO article = new BoardDTO(); //ê°ì²´ ë§Œë“¦
 		
-		article.setNum(rs.getInt("num"));//°Ô½Ã¹° ¹øÈ£¸¦ ºÒ·¯¿Â´Ù. 
+		article.setNum(rs.getInt("num"));//ê²Œì‹œë¬¼ ë²ˆí˜¸ë¥¼ ë¶ˆëŸ¬ì˜¨ë‹¤. 
 		article.setWriter(rs.getString("writer"));
 		article.setEmail(rs.getString("email"));
 		article.setSubject(rs.getString("subject"));
@@ -328,13 +328,13 @@ public class BoardDAO {
 		article.setContent(rs.getString("content"));
 		article.setIp(rs.getString("ip"));
 		
-		article.setRegdate(rs.getTimestamp("reg_date"));//ÀÛ¼º³¯Â¥ (¿À´Ã³¯Â¥)
-		article.setReadcount(rs.getInt("readcount")); //Á¶È¸¼ö
+		article.setRegdate(rs.getTimestamp("reg_date"));//ì‘ì„±ë‚ ì§œ (ì˜¤ëŠ˜ë‚ ì§œ)
+		article.setReadcount(rs.getInt("readcount")); //ì¡°íšŒìˆ˜
 		
-		//-----------------´ñ±Û----------------
-		article.setRef(rs.getInt("ref")); //±×·ì¹øÈ£
-		article.setRe_step(rs.getInt("re_step")); //´äº¯±Û ¼ø¼­
-		article.setRe_level(rs.getInt("re_level")); //´äº¯ÀÇ ±íÀÌ 
+		//-----------------ëŒ“ê¸€----------------
+		article.setRef(rs.getInt("ref")); //ê·¸ë£¹ë²ˆí˜¸
+		article.setRe_step(rs.getInt("re_step")); //ë‹µë³€ê¸€ ìˆœì„œ
+		article.setRe_level(rs.getInt("re_level")); //ë‹µë³€ì˜ ê¹Šì´ 
 		//-------------------------------------
 		
 		article.setContent(rs.getString("content"));
@@ -346,126 +346,126 @@ public class BoardDAO {
 	
 	
 	
-	//2. ±Û ¼öÁ¤ÇØÁÖ´Â ¸Ş¼­µå ÇÊ¿ä(insertArticle¸Ş¼­µå¿Í °ÅÀÇ ºñ½Á)
-	public int updateArticle(BoardDTO article){//¡Ú¼öÁ¤ ¼º°øÇß´Ùvs¸øÇß´Ù¡Ú -> booleanÀÌÁö¸¸ int·Î ÇØº½ 
-		//¼öÁ¤ÇÏ´Â µ¥ÀÌÅÍ, ¼öÁ¤ÇÏÁö ¾Ê´Â µ¥ÀÌÅÍ ¸ğµÎ °¡Áö°í ¿È
-		//ÀüÃ¼¸¦ ¹Ş¾Æ¿È, ¹İÈ¯°ª ÀÖÀ½
+	//2. ê¸€ ìˆ˜ì •í•´ì£¼ëŠ” ë©”ì„œë“œ í•„ìš”(insertArticleë©”ì„œë“œì™€ ê±°ì˜ ë¹„ìŠ·)
+	public int updateArticle(BoardDTO article){//â˜…ìˆ˜ì • ì„±ê³µí–ˆë‹¤vsëª»í–ˆë‹¤â˜… -> booleanì´ì§€ë§Œ intë¡œ í•´ë´„ 
+		//ìˆ˜ì •í•˜ëŠ” ë°ì´í„°, ìˆ˜ì •í•˜ì§€ ì•ŠëŠ” ë°ì´í„° ëª¨ë‘ ê°€ì§€ê³  ì˜´
+		//ì „ì²´ë¥¼ ë°›ì•„ì˜´, ë°˜í™˜ê°’ ìˆìŒ
 		
-		String dbpasswd = null; //DB¿¡¼­ Ã£Àº ¾ÏÈ£¸¦ ÀúÀåÇÒ º¯¼ö (¾ÏÈ£°¡ ¸ÂÀ¸¸é ¼öÁ¤, Æ²¸®¸é ¼öÁ¤X)
-		int x = -1; //°Ô½Ã¹°ÀÇ ¼öÁ¤¼º°ø À¯¹«
+		String dbpasswd = null; //DBì—ì„œ ì°¾ì€ ì•”í˜¸ë¥¼ ì €ì¥í•  ë³€ìˆ˜ (ì•”í˜¸ê°€ ë§ìœ¼ë©´ ìˆ˜ì •, í‹€ë¦¬ë©´ ìˆ˜ì •X)
+		int x = -1; //ê²Œì‹œë¬¼ì˜ ìˆ˜ì •ì„±ê³µ ìœ ë¬´
 		
 		
-	//°Ô½Ã¹° ¹øÈ£ + 1 -> ´ÙÀ½¹ø¿¡ °Ô½Ã±ÛÀ» ¾²¸é ¹øÈ£°¡ +1ÀÌ µÇ´Â °Í.
+	//ê²Œì‹œë¬¼ ë²ˆí˜¸ + 1 -> ë‹¤ìŒë²ˆì— ê²Œì‹œê¸€ì„ ì“°ë©´ ë²ˆí˜¸ê°€ +1ì´ ë˜ëŠ” ê²ƒ.
 			try {
-				con = pool.getConnection(); //Ç×»ó DB¸¦ ¸ÕÀú ¿¬°áÇÑ´Ù.
-				//SQL¹®Àå
-				sql = "select passwd from board where num=?"; //°Ô½Ã±Û¿¡ ÇØ´çÇÏ´Â passwd¸¦ °¡Áö°í ¿È
-				pstmt = con.prepareStatement(sql); //pstmt¸¦ ¾ò¾î¿Í¾ß sql¹®ÀåÀ» ½ÇÇàÇÒ ¼ö ÀÖ´Ù.
-				//?°¡ ÀÖÀ¸¹Ç·Î 
-				pstmt.setInt(1, article.getNum()); //article¿¡¼­ ²¨³»¼­ °Ô½Ã±Û ¹øÈ£¸¦ °¡Áö°í ¿È.
-				//selectÀÌ±â ¶§¹®¿¡ result°ªÀ» ¾ò¾î¿Â´Ù., executeQuery()
-				//insert¿´´Ù¸é executeUpdate
+				con = pool.getConnection(); //í•­ìƒ DBë¥¼ ë¨¼ì € ì—°ê²°í•œë‹¤.
+				//SQLë¬¸ì¥
+				sql = "select passwd from board where num=?"; //ê²Œì‹œê¸€ì— í•´ë‹¹í•˜ëŠ” passwdë¥¼ ê°€ì§€ê³  ì˜´
+				pstmt = con.prepareStatement(sql); //pstmtë¥¼ ì–»ì–´ì™€ì•¼ sqlë¬¸ì¥ì„ ì‹¤í–‰í•  ìˆ˜ ìˆë‹¤.
+				//?ê°€ ìˆìœ¼ë¯€ë¡œ 
+				pstmt.setInt(1, article.getNum()); //articleì—ì„œ êº¼ë‚´ì„œ ê²Œì‹œê¸€ ë²ˆí˜¸ë¥¼ ê°€ì§€ê³  ì˜´.
+				//selectì´ê¸° ë•Œë¬¸ì— resultê°’ì„ ì–»ì–´ì˜¨ë‹¤., executeQuery()
+				//insertì˜€ë‹¤ë©´ executeUpdate
 				rs = pstmt.executeQuery();
 				
-				if(rs.next()) { //ÇöÀç Å×ÀÌºí¿¡¼­ ÀÔ·ÂÇÑ ¾ÏÈ£¸¦ Ã£¾Ò´Ù¸é
+				if(rs.next()) { //í˜„ì¬ í…Œì´ë¸”ì—ì„œ ì…ë ¥í•œ ì•”í˜¸ë¥¼ ì°¾ì•˜ë‹¤ë©´
 					dbpasswd = rs.getString("passwd");
-					//¾ÏÈ£ È®ÀÎ
+					//ì•”í˜¸ í™•ì¸
 					System.out.println("dbpasswd=>" + dbpasswd);
 				
 				
-				//db»óÀÇ ¾ÏÈ£¿Í À¥»ó¿¡ ÀÔ·ÂÇÑ ¾ÏÈ£°¡ °°´Ù¸é
+				//dbìƒì˜ ì•”í˜¸ì™€ ì›¹ìƒì— ì…ë ¥í•œ ì•”í˜¸ê°€ ê°™ë‹¤ë©´
 				if(dbpasswd.contentEquals(article.getPasswd())) {
 					
-				//¼öÁ¤ÇÏ´Â sql¹®Àå
+				//ìˆ˜ì •í•˜ëŠ” sqlë¬¸ì¥
 				sql = "update board set writer=?,email=?,subject=?,passwd=?,";
 				sql+="content=? where num=?";
-				//¼öÁ¤ÇÒ ¼ö ÀÖ´Â °ÍµéÀ» °ñ¶ó ?¸¦ ºÙÀÎ´Ù. ±×¸®°í ´Ù ¹Ù²î´Â °ÍÀÌ ¾Æ´Ï¶ó °Ô½Ã±Û ¹øÈ£¿¡ ÇØ´çµÇ´Â °Í¸¸ ¹Ù²ã¾ßÇÏ¹Ç·Î where!
+				//ìˆ˜ì •í•  ìˆ˜ ìˆëŠ” ê²ƒë“¤ì„ ê³¨ë¼ ?ë¥¼ ë¶™ì¸ë‹¤. ê·¸ë¦¬ê³  ë‹¤ ë°”ë€ŒëŠ” ê²ƒì´ ì•„ë‹ˆë¼ ê²Œì‹œê¸€ ë²ˆí˜¸ì— í•´ë‹¹ë˜ëŠ” ê²ƒë§Œ ë°”ê¿”ì•¼í•˜ë¯€ë¡œ where!
 				
 				pstmt = con.prepareStatement(sql);
-				//articleÀº À¥»óÀÇ µ¥ÀÌÅÍ¸¦ ±×´ë·Î ³Ö´Â°Í.
-				//articleÀÌ ¾ø´Â °ÍÀº ±×¶§ ±×¶§ °è»êÇØ¼­ ³Ö±â ¶§¹®¿¡ °ªÀÌ ¹Ù²ï´Ù.
-				pstmt.setString(1, article.getWriter()); //ÀÛ¼ºÀÚ
+				//articleì€ ì›¹ìƒì˜ ë°ì´í„°ë¥¼ ê·¸ëŒ€ë¡œ ë„£ëŠ”ê²ƒ.
+				//articleì´ ì—†ëŠ” ê²ƒì€ ê·¸ë•Œ ê·¸ë•Œ ê³„ì‚°í•´ì„œ ë„£ê¸° ë•Œë¬¸ì— ê°’ì´ ë°”ë€ë‹¤.
+				pstmt.setString(1, article.getWriter()); //ì‘ì„±ì
 				pstmt.setString(2, article.getEmail());
 				pstmt.setString(3, article.getSubject());
 				pstmt.setString(4, article.getPasswd());
-				pstmt.setString(5,article.getContent()); //±Û ³»¿ë ±×´ë·Î ºÒ·¯¿Â´Ù.
+				pstmt.setString(5,article.getContent()); //ê¸€ ë‚´ìš© ê·¸ëŒ€ë¡œ ë¶ˆëŸ¬ì˜¨ë‹¤.
 				pstmt.setInt(6, article.getNum());
 
-				//pstmt.setTimestamp(5, article.getRegdate()); -> ¼öÁ¤ÇÏÁö ¾ÊÀ½.
-				//articleÀº ÀúÀåÇÑ °ª ±×´ë·Î Ãâ·ÂÇÒ ¶§ »ç¿ë.
-				//ÀÌ·¸°Ô ÇÏÁö ¾ÊÀ»°Å¸é values(?,?...)¾´ ºÎºĞ¿¡¼­ 5¹øÂ°¿¡(?,?,?,?,now(),?,?....)·Î ¾µ ¼ö ÀÖ´Ù.
+				//pstmt.setTimestamp(5, article.getRegdate()); -> ìˆ˜ì •í•˜ì§€ ì•ŠìŒ.
+				//articleì€ ì €ì¥í•œ ê°’ ê·¸ëŒ€ë¡œ ì¶œë ¥í•  ë•Œ ì‚¬ìš©.
+				//ì´ë ‡ê²Œ í•˜ì§€ ì•Šì„ê±°ë©´ values(?,?...)ì“´ ë¶€ë¶„ì—ì„œ 5ë²ˆì§¸ì—(?,?,?,?,now(),?,?....)ë¡œ ì“¸ ìˆ˜ ìˆë‹¤.
 				
 				
-				int update = pstmt.executeUpdate(); //sql¹®ÀÌ insertÀÌ±â ¶§¹®¿¡ executeUpdate()!
-				System.out.println("°Ô½ÃÆÇÀÇ ±Û ¼öÁ¤ ¼º°øÀ¯¹«(update)=>" + update);
+				int update = pstmt.executeUpdate(); //sqlë¬¸ì´ insertì´ê¸° ë•Œë¬¸ì— executeUpdate()!
+				System.out.println("ê²Œì‹œíŒì˜ ê¸€ ìˆ˜ì • ì„±ê³µìœ ë¬´(update)=>" + update);
 				
-				x=1; //¼º°ø
+				x=1; //ì„±ê³µ
 				}else {
-					x=0; //¼öÁ¤½ÇÆĞ
+					x=0; //ìˆ˜ì •ì‹¤íŒ¨
 				}
-				}//--if(rs.next())ÀÇ °ıÈ£
+				}//--if(rs.next())ì˜ ê´„í˜¸
 			}catch(Exception e) {
-				System.out.println("insertArticle()¸Ş¼­µå ¿¡·¯ À¯¹ß=>" + e);
+				System.out.println("insertArticle()ë©”ì„œë“œ ì—ëŸ¬ ìœ ë°œ=>" + e);
 			}finally {
 				pool.freeConnection(con, pstmt, rs);
 			}
-			return x;//xÀÇ °ªÀ» ¹İÈ¯
+			return x;//xì˜ ê°’ì„ ë°˜í™˜
 	}
 	
 	
 	
 	
-//±Û »èÁ¦ ½ÃÄÑÁÖ´Â ¸Ş¼­µå => È¸¿øÅ»Åğ ¸Ş¼­µå¿Í µ¿ÀÏ(»èÁ¦ Àü ¾ÏÈ£¸¦ ¹°¾îº»´Ù!)
+//ê¸€ ì‚­ì œ ì‹œì¼œì£¼ëŠ” ë©”ì„œë“œ => íšŒì›íƒˆí‡´ ë©”ì„œë“œì™€ ë™ì¼(ì‚­ì œ ì „ ì•”í˜¸ë¥¼ ë¬¼ì–´ë³¸ë‹¤!)
 	public int deleteArticle(int num, String passwd){
 		
-		String dbpasswd = null; //DB¿¡¼­ Ã£Àº ¾ÏÈ£¸¦ ÀúÀåÇÒ º¯¼ö (¾ÏÈ£°¡ ¸ÂÀ¸¸é »èÁ¦, Æ²¸®¸é »èÁ¦X)
-		int x = -1; //°Ô½Ã¹°ÀÇ »èÁ¦ ¼º°ø À¯¹«
+		String dbpasswd = null; //DBì—ì„œ ì°¾ì€ ì•”í˜¸ë¥¼ ì €ì¥í•  ë³€ìˆ˜ (ì•”í˜¸ê°€ ë§ìœ¼ë©´ ì‚­ì œ, í‹€ë¦¬ë©´ ì‚­ì œX)
+		int x = -1; //ê²Œì‹œë¬¼ì˜ ì‚­ì œ ì„±ê³µ ìœ ë¬´
 		
 		
-	//°Ô½Ã¹° ¹øÈ£ + 1 -> ´ÙÀ½¹ø¿¡ °Ô½Ã±ÛÀ» ¾²¸é ¹øÈ£°¡ +1ÀÌ µÇ´Â °Í.
+	//ê²Œì‹œë¬¼ ë²ˆí˜¸ + 1 -> ë‹¤ìŒë²ˆì— ê²Œì‹œê¸€ì„ ì“°ë©´ ë²ˆí˜¸ê°€ +1ì´ ë˜ëŠ” ê²ƒ.
 			try {
-				con = pool.getConnection(); //Ç×»ó DB¸¦ ¸ÕÀú ¿¬°áÇÑ´Ù.
-				//SQL¹®Àå
-				sql = "select passwd from board where num=?"; //°Ô½Ã±Û(num)¿¡ ÇØ´çÇÏ´Â passwd¸¦ °¡Áö°í ¿È
-				pstmt = con.prepareStatement(sql); //pstmt¸¦ ¾ò¾î¿Í¾ß sql¹®ÀåÀ» ½ÇÇàÇÒ ¼ö ÀÖ´Ù. -> ÀÌ°É ÀÛ¼ºÇÏÁö ¾ÊÀ¸¸é NullPointerException ¿À·ù°¡ ³­´Ù.
-				//?°¡ ÀÖÀ¸¹Ç·Î 
+				con = pool.getConnection(); //í•­ìƒ DBë¥¼ ë¨¼ì € ì—°ê²°í•œë‹¤.
+				//SQLë¬¸ì¥
+				sql = "select passwd from board where num=?"; //ê²Œì‹œê¸€(num)ì— í•´ë‹¹í•˜ëŠ” passwdë¥¼ ê°€ì§€ê³  ì˜´
+				pstmt = con.prepareStatement(sql); //pstmtë¥¼ ì–»ì–´ì™€ì•¼ sqlë¬¸ì¥ì„ ì‹¤í–‰í•  ìˆ˜ ìˆë‹¤. -> ì´ê±¸ ì‘ì„±í•˜ì§€ ì•Šìœ¼ë©´ NullPointerException ì˜¤ë¥˜ê°€ ë‚œë‹¤.
+				//?ê°€ ìˆìœ¼ë¯€ë¡œ 
 				pstmt.setInt(1, num);
-				//selectÀÌ±â ¶§¹®¿¡ result°ªÀ» ¾ò¾î¿Â´Ù., executeQuery()
-				//insert, update, delete¶ó¸é executeUpdate
+				//selectì´ê¸° ë•Œë¬¸ì— resultê°’ì„ ì–»ì–´ì˜¨ë‹¤., executeQuery()
+				//insert, update, deleteë¼ë©´ executeUpdate
 				rs = pstmt.executeQuery();
 				
-				if(rs.next()) { //ÇöÀç Å×ÀÌºí¿¡¼­ ÀÔ·ÂÇÑ ¾ÏÈ£¸¦ Ã£¾Ò´Ù¸é
+				if(rs.next()) { //í˜„ì¬ í…Œì´ë¸”ì—ì„œ ì…ë ¥í•œ ì•”í˜¸ë¥¼ ì°¾ì•˜ë‹¤ë©´
 					dbpasswd = rs.getString("passwd");
-					//¾ÏÈ£ È®ÀÎ
+					//ì•”í˜¸ í™•ì¸
 					System.out.println("dbpasswd=>" + dbpasswd);
 				
 				
-				//db»óÀÇ ¾ÏÈ£¿Í À¥»ó¿¡ ÀÔ·ÂÇÑ ¾ÏÈ£°¡ °°´Ù¸é
+				//dbìƒì˜ ì•”í˜¸ì™€ ì›¹ìƒì— ì…ë ¥í•œ ì•”í˜¸ê°€ ê°™ë‹¤ë©´
 				if(dbpasswd.contentEquals(passwd)) {
 					
-				//»èÁ¦ÇÏ´Â sql¹®Àå
+				//ì‚­ì œí•˜ëŠ” sqlë¬¸ì¥
 				sql = "delete from board where num=?";
-				//»èÁ¦¸¦ ÇÑ´Ù. »èÁ¦ÇÑ´Ù°í ÇÑ °Ô½Ã±Û ¹øÈ£¸¸.
-				//sql±¸¹® °³¼ö = pstmt°³¼ö
+				//ì‚­ì œë¥¼ í•œë‹¤. ì‚­ì œí•œë‹¤ê³  í•œ ê²Œì‹œê¸€ ë²ˆí˜¸ë§Œ.
+				//sqlêµ¬ë¬¸ ê°œìˆ˜ = pstmtê°œìˆ˜
 				pstmt = con.prepareStatement(sql);
 				
-				//?°¡ ÀÖÀ¸¹Ç·Î set ÇÊ¿ä.
-				pstmt.setInt(1, num); //°Ô½Ã±Û ¹øÈ£
+				//?ê°€ ìˆìœ¼ë¯€ë¡œ set í•„ìš”.
+				pstmt.setInt(1, num); //ê²Œì‹œê¸€ ë²ˆí˜¸
 
-				int delete = pstmt.executeUpdate(); //sql¹®ÀÌ insertÀÌ±â ¶§¹®¿¡ executeUpdate()!
-				System.out.println("°Ô½ÃÆÇÀÇ ±Û »èÁ¦ ¼º°øÀ¯¹«(delete)=>" + delete);
+				int delete = pstmt.executeUpdate(); //sqlë¬¸ì´ insertì´ê¸° ë•Œë¬¸ì— executeUpdate()!
+				System.out.println("ê²Œì‹œíŒì˜ ê¸€ ì‚­ì œ ì„±ê³µìœ ë¬´(delete)=>" + delete);
 				
-				x=1; //»èÁ¦ ¼º°ø    --> ¹İÈ¯°ª ÀúÀå!!   (booleanÀ¸·Î Çß´Ù¸é check = true;)
+				x=1; //ì‚­ì œ ì„±ê³µ    --> ë°˜í™˜ê°’ ì €ì¥!!   (booleanìœ¼ë¡œ í–ˆë‹¤ë©´ check = true;)
 				
-				}else { //¾ÏÈ£°¡ Æ²·È´Ù¸é
-					x=0; //»èÁ¦ ½ÇÆĞ      (booleanÀ¸·Î Çß´Ù¸é check=false;)
+				}else { //ì•”í˜¸ê°€ í‹€ë ¸ë‹¤ë©´
+					x=0; //ì‚­ì œ ì‹¤íŒ¨      (booleanìœ¼ë¡œ í–ˆë‹¤ë©´ check=false;)
 				}
-			}//--if(rs.next())ÀÇ °ıÈ£
+			}//--if(rs.next())ì˜ ê´„í˜¸
 		}catch(Exception e) {
-			System.out.println("deleteArticle()¸Ş¼­µå ¿¡·¯ À¯¹ß=>" + e);
+			System.out.println("deleteArticle()ë©”ì„œë“œ ì—ëŸ¬ ìœ ë°œ=>" + e);
 		}finally {
-			pool.freeConnection(con, pstmt, rs); //¸Ş¸ğ¸® ÇØÁ¦
+			pool.freeConnection(con, pstmt, rs); //ë©”ëª¨ë¦¬ í•´ì œ
 		}
-		return x;//xÀÇ °ªÀ» ¹İÈ¯
+		return x;//xì˜ ê°’ì„ ë°˜í™˜
 	}
 }
